@@ -1,0 +1,29 @@
+{%- comment -%}
+  Janela em tela cheia reutilizável.
+  Params: modal_id, title, content (HTML), cta_title, cta_sub, cta_label (vazio = sem rodapé)
+{%- endcomment -%}
+<dialog class="rules-modal" id="{{ modal_id }}" data-info-modal aria-labelledby="{{ modal_id }}-title">
+  <div class="rules-modal__head">
+    <div class="container rules-modal__head-inner">
+      {%- if settings.logo_mark != blank -%}
+        {{ settings.logo_mark | image_url: width: 400 | image_tag: class: 'rules-modal__mark', alt: '', loading: 'lazy' }}
+      {%- endif -%}
+      <h2 class="rules-modal__title" id="{{ modal_id }}-title">{{ title }}</h2>
+      <button type="button" class="rules-modal__close" data-modal-close aria-label="{{ 'general.close' | t }}">{% render 'icon', name: 'close' %}</button>
+    </div>
+  </div>
+  <div class="rules-modal__body" data-modal-body>
+    <div class="rules-modal__content rte">{{ content }}</div>
+  </div>
+  {%- if cta_label != blank -%}
+    <div class="rules-modal__foot">
+      <div class="container rules-modal__foot-inner">
+        <div class="rules-modal__cta-text">
+          <p class="rules-modal__cta-title">{{ cta_title }}</p>
+          {%- if cta_sub != blank -%}<p class="rules-modal__cta-sub">{{ cta_sub }}</p>{%- endif -%}
+        </div>
+        <a class="btn btn--red btn--lg" href="#donation" data-modal-enter>{{ cta_label }}</a>
+      </div>
+    </div>
+  {%- endif -%}
+</dialog>

@@ -1,0 +1,18 @@
+{%- case name -%}
+  {%- when 'engine' -%}
+    <svg viewBox="0 0 48 48" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="6" y="6" width="14" height="12" rx="2" transform="rotate(-35 13 12)"/><rect x="28" y="6" width="14" height="12" rx="2" transform="rotate(35 35 12)"/><path d="M15 18l8 14M33 18l-8 14"/><circle cx="24" cy="38" r="5"/><circle cx="24" cy="38" r="1.5" fill="currentColor"/></g></svg>
+  {%- when 'speed' -%}
+    <svg viewBox="0 0 48 48" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="24" cy="24" r="20"/><circle cx="24" cy="24" r="15"/><path d="M24 24l7-8M18 34h12M24 11v3M13 17l2 2M35 17l-2 2M11 27h3M34 27h3"/></g><circle cx="24" cy="24" r="2.5" fill="currentColor"/></svg>
+  {%- when 'turbo' -%}
+    <svg viewBox="0 0 48 48" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M24 6a18 18 0 1 0 14 29.3V42h6V30h-8"/><circle cx="24" cy="24" r="9"/><path d="M24 15v18M15 24h18M17.6 17.6l12.8 12.8M30.4 17.6L17.6 30.4"/></g></svg>
+  {%- when 'calendar' -%}
+    <svg viewBox="0 0 48 48" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="6" y="10" width="36" height="32" rx="3"/><path d="M6 19h36M15 6v8M33 6v8"/><path d="M14 27h4M22 27h4M30 27h4M14 34h4M22 34h4"/></g></svg>
+  {%- when 'seat' -%}
+    <svg viewBox="0 0 48 48" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M14 6h8l3 22H14z"/><path d="M14 28h20a4 4 0 0 1 4 4v4H12"/><path d="M16 36v6M34 36v6"/></g></svg>
+  {%- when 'fuel' -%}
+    <svg viewBox="0 0 48 48" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><rect x="8" y="6" width="20" height="36" rx="2"/><path d="M8 18h20M28 14l8 6v16a3 3 0 0 0 6 0V20l-6-6"/></g></svg>
+  {%- when 'trophy' -%}
+    <svg viewBox="0 0 48 48" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M14 6h20v12a10 10 0 0 1-20 0z"/><path d="M14 10H7v4a7 7 0 0 0 7 7M34 10h7v4a7 7 0 0 1-7 7M24 28v8M16 42h16M18 36h12"/></g></svg>
+  {%- else -%}
+    <svg viewBox="0 0 48 48" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M4 30v-5l5-2 6-6c1-1 2-1.5 3.5-1.5H30c1.6 0 3 .6 4 1.8l4.5 5.2 5 1.2c1 .3 1.5 1 1.5 2V30a2 2 0 0 1-2 2h-2M10 32H6a2 2 0 0 1-2-2M18 32h14"/><circle cx="14" cy="32" r="4"/><circle cx="36" cy="32" r="4"/><path d="M15 23h24M24 15.5V23"/></g></svg>
+{%- endcase -%}

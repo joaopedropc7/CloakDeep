@@ -1,0 +1,501 @@
+{%- liquid
+  assign mf = product.metafields.custom
+  assign end_date = mf.end_date.value
+  assign draw_date = mf.draw_date.value
+  assign start_date = mf.start_date.value
+  assign hero_image = mf.hero_image.value
+  assign rules = mf.official_rules
+  assign details_intro = mf.details_intro
+  assign details_body = mf.details_body
+  assign spec_items = mf.spec_items.value
+  assign details_image = mf.details_image.value
+  if details_image == blank
+    assign details_image = images.last
+  endif
+  assign has_details = false
+  if details_intro != blank or details_body != blank or spec_items != blank
+    assign has_details = true
+  endif
+  assign details_title = mf.details_title.value | default: product.title
+  assign images = product.media | where: 'media_type', 'image'
+  assign hero_video = product.media | where: 'media_type', 'video' | first
+  assign ended = false
+  if end_date != blank
+    assign now_s = 'now' | date: '%s' | plus: 0
+    assign end_s = end_date | date: '%s' | plus: 0
+    if now_s > end_s
+      assign ended = true
+    endif
+  endif
+-%}
+
+<div class="product-subnav">
+  <div class="container product-subnav__inner">
+    {%- if settings.logo_mark != blank -%}
+      {{ settings.logo_mark | image_url: width: 400 | image_tag: class: 'product-subnav__mark', alt: shop.name, loading: 'eager' }}
+    {%- endif -%}
+    <a class="product-subnav__tab is-active" href="#details">{{ section.settings.tab_details }}</a>
+    {%- if section.settings.winners_url != blank -%}
+      <a class="product-subnav__tab" href="{{ section.settings.winners_url }}">{{ section.settings.tab_winners }}</a>
+    {%- endif -%}
+  </div>
+</div>
+
+{%- if section.settings.show_hero -%}
+  {%- if hero_video or hero_image or product.featured_image -%}
+    <div class="product-hero-wrap">
+      <div class="container">
+        <div class="product-hero">
+          {%- if hero_video -%}
+            {{ hero_video | video_tag: autoplay: true, loop: true, muted: true, controls: false, playsinline: true, image_size: '1600x', class: 'product-hero__media' }}
+          {%- elsif hero_image -%}
+            {{ hero_image | image_url: width: 2400 | image_tag: class: 'product-hero__media', loading: 'eager', fetchpriority: 'high', widths: '800,1200,1600,2400', sizes: '(min-width: 1400px) 1360px, 100vw', alt: product.title }}
+          {%- else -%}
+            {{ product.featured_image | image_url: width: 2400 | image_tag: class: 'product-hero__media', loading: 'eager', fetchpriority: 'high', widths: '800,1200,1600,2400', sizes: '(min-width: 1400px) 1360px, 100vw', alt: product.title }}
+          {%- endif -%}
+          {%- if end_date != blank and section.settings.hero_end_label != blank -%}
+            <span class="product-hero__tag">{{ section.settings.hero_end_label }} {{ end_date | date: '%-m/%-d' }}</span>
+          {%- endif -%}
+        </div>
+      </div>
+    </div>
+  {%- endif -%}
+{%- endif -%}
+
+<div class="container product-layout" id="details">
+  <div class="product-main">
+    <h1 class="product-title">{{ product.title }}</h1>
+    <div class="product-meta">
+      <div class="product-meta__left">
+        {%- if mf.giveaway_number != blank -%}
+          <span>{{ section.settings.number_label }} {{ mf.giveaway_number }}</span>
+        {%- endif -%}
+        {%- if mf.giveaway_number != blank and draw_date != blank -%}<span class="product-meta__sep" aria-hidden="true">|</span>{%- endif -%}
+        {%- if draw_date != blank -%}
+          <span>{{ section.settings.drawn_label }} {{ draw_date | date: settings.date_format }}</span>
+        {%- endif -%}
+      </div>
+      {%- if end_date != blank -%}
+        <div class="product-meta__right">
+          {{ section.settings.remaining_label }}
+          {%- if ended -%} <strong>{{ settings.ended_label }}</strong>{%- else -%} {% render 'countdown', end: end_date, style: 'inline' %}{%- endif -%}
+        </div>
+      {%- endif -%}
+    </div>
+
+    {%- for block in section.blocks -%}
+      {%- case block.type -%}
+        {%- when 'gallery' -%}
+          <section class="pblock pblock--gallery" {{ block.shopify_attributes }}>
+            {%- if block.settings.heading != blank -%}<h2 class="pblock__heading">{{ block.settings.heading }}</h2>{%- endif -%}
+            {%- if images.size > 0 -%}
+              <div class="gallery-grid">
+                {%- for media in images limit: 3 -%}
+                  <button type="button" class="gallery-grid__item" data-lightbox-open="{{ forloop.index0 }}" aria-label="{{ media.alt | default: product.title | escape }}">
+                    {{ media | image_url: width: 900 | image_tag: loading: 'lazy', widths: '400,600,900', sizes: '(min-width: 990px) 22vw, 33vw' }}
+                  </button>
+                {%- endfor -%}
+              </div>
+              <button type="button" class="btn btn--red" data-lightbox-open="0">{{ block.settings.button_label }}</button>
+              <dialog class="lightbox" data-lightbox>
+                <button type="button" class="lightbox__close" data-lightbox-close aria-label="{{ 'general.close' | t }}">{% render 'icon', name: 'close' %}</button>
+                <button type="button" class="lightbox__nav lightbox__nav--prev" data-lightbox-prev aria-label="{{ 'general.previous' | t }}">{% render 'icon', name: 'chevron-left' %}</button>
+                <div class="lightbox__stage">
+                  {%- for media in images -%}
+                    <img src="{{ media | image_url: width: 2000 }}" alt="{{ media.alt | escape }}" width="{{ media.width }}" height="{{ media.height }}" loading="lazy" data-lightbox-slide{% unless forloop.first %} hidden{% endunless %}>
+                  {%- endfor -%}
+                </div>
+                <button type="button" class="lightbox__nav lightbox__nav--next" data-lightbox-next aria-label="{{ 'general.next' | t }}">{% render 'icon', name: 'chevron-right' %}</button>
+                <p class="lightbox__counter" data-lightbox-counter></p>
+              </dialog>
+            {%- endif -%}
+          </section>
+
+        {%- when 'description' -%}
+          <section class="pblock" {{ block.shopify_attributes }}>
+            {%- assign headline = mf.prize_headline.value | default: block.settings.heading -%}
+            {%- if headline != blank -%}<h2 class="pblock__heading">{{ headline }}</h2>{%- endif -%}
+            <div class="rte" data-description>{{ product.description }}</div>
+            {%- if block.settings.show_details_card and has_details -%}
+              <a class="link-card link-card--in-desc{% if details_image == blank %} link-card--no-image{% endif %}" href="#prize-details" data-modal-open="prize-details" role="button" data-insert-before="{{ block.settings.details_before | escape }}">
+                {%- if details_image != blank -%}
+                  <span class="link-card__media">{{ details_image | image_url: width: 700 | image_tag: loading: 'lazy', widths: '350,700', sizes: '320px', alt: details_title }}</span>
+                {%- endif -%}
+                <span class="link-card__body">
+                  <span class="link-card__title">{{ details_title }}</span>
+                  {%- if mf.details_subtitle != blank -%}<span class="link-card__subtitle">{{ mf.details_subtitle.value }}</span>{%- endif -%}
+                </span>
+                <span class="link-card__arrow">{% render 'icon', name: 'chevron-right' %}</span>
+              </a>
+            {%- endif -%}
+          </section>
+
+        {%- when 'link_card' -%}
+          {%- liquid
+            assign card_href = block.settings.url | default: '#'
+            assign card_modal = ''
+            assign card_image = block.settings.image
+            assign card_title = block.settings.title
+            assign card_subtitle = block.settings.subtitle
+            if block.settings.open_rules and rules != blank
+              assign card_modal = 'official-rules'
+            elsif block.settings.open_details and has_details
+              assign card_modal = 'prize-details'
+              assign card_image = details_image | default: block.settings.image
+              assign card_title = details_title
+              assign card_subtitle = mf.details_subtitle.value | default: block.settings.subtitle
+            endif
+          -%}
+          {%- if block.settings.open_details and has_details == false -%}{%- continue -%}{%- endif -%}
+          <a class="link-card{% if card_image == blank %} link-card--no-image{% endif %}" href="{% if card_modal != blank %}#{{ card_modal }}{% else %}{{ card_href }}{% endif %}" {% if card_modal != blank %}data-modal-open="{{ card_modal }}" role="button"{% elsif block.settings.new_tab %}target="_blank" rel="noopener"{% endif %} {{ block.shopify_attributes }}>
+            {%- if card_image != blank -%}
+              <span class="link-card__media">{{ card_image | image_url: width: 700 | image_tag: loading: 'lazy', widths: '350,700', sizes: '320px', alt: card_title }}</span>
+            {%- endif -%}
+            <span class="link-card__body">
+              <span class="link-card__title">{{ card_title }}</span>
+              {%- if card_subtitle != blank -%}<span class="link-card__subtitle">{{ card_subtitle }}</span>{%- endif -%}
+            </span>
+            <span class="link-card__arrow">{% render 'icon', name: 'chevron-right' %}</span>
+          </a>
+
+        {%- when 'key_dates' -%}
+          {%- if start_date != blank or end_date != blank or draw_date != blank -%}
+            <section class="pblock" {{ block.shopify_attributes }}>
+              {%- if block.settings.heading != blank -%}<h2 class="pblock__heading">{{ block.settings.heading }}</h2>{%- endif -%}
+              <ul class="key-dates">
+                {%- if start_date != blank -%}<li><strong>{{ block.settings.start_label }}</strong>: {{ start_date | date: settings.date_format }}</li>{%- endif -%}
+                {%- if end_date != blank -%}<li><strong>{{ block.settings.end_label }}</strong>: {{ end_date | date: settings.date_format }}</li>{%- endif -%}
+                {%- if draw_date != blank -%}<li><strong>{{ block.settings.draw_label }}</strong>: {{ draw_date | date: settings.date_format }}</li>{%- endif -%}
+              </ul>
+              {%- if block.settings.text != blank -%}<div class="rte">{{ block.settings.text }}</div>{%- endif -%}
+            </section>
+          {%- endif -%}
+
+        {%- when 'rich_text' -%}
+          <section class="pblock" {{ block.shopify_attributes }}>
+            {%- if block.settings.heading != blank -%}<h2 class="pblock__heading">{{ block.settings.heading }}</h2>{%- endif -%}
+            <div class="rte">{{ block.settings.text }}</div>
+          </section>
+
+        {%- when 'image' -%}
+          {%- if block.settings.image != blank -%}
+            <figure class="pblock pblock--image" {{ block.shopify_attributes }}>
+              {{ block.settings.image | image_url: width: 2000 | image_tag: loading: 'lazy', widths: '600,1000,1500,2000', sizes: '(min-width: 990px) 900px, 100vw' }}
+            </figure>
+          {%- endif -%}
+
+        {%- when 'video' -%}
+          {%- liquid
+            assign embed = ''
+            assign native_src = ''
+            assign raw = mf.video_url.value | append: ''
+            if raw != blank
+              if raw contains 'vimeo.com'
+                assign vid = raw | split: '?' | first | split: '/' | last
+                assign embed = 'https://player.vimeo.com/video/' | append: vid | append: '?autoplay=1'
+              else
+                if raw contains 'v='
+                  assign vid = raw | split: 'v=' | last | split: '&' | first
+                elsif raw contains 'youtu.be/'
+                  assign vid = raw | split: 'youtu.be/' | last | split: '?' | first
+                elsif raw contains '/shorts/'
+                  assign vid = raw | split: '/shorts/' | last | split: '?' | first
+                else
+                  assign vid = raw | split: '?' | first | split: '/' | last
+                endif
+                assign embed = 'https://www.youtube.com/embed/' | append: vid | append: '?autoplay=1&rel=0'
+              endif
+            elsif block.settings.video_url != blank
+              if block.settings.video_url.type == 'youtube'
+                assign embed = 'https://www.youtube.com/embed/' | append: block.settings.video_url.id | append: '?autoplay=1&rel=0'
+              else
+                assign embed = 'https://player.vimeo.com/video/' | append: block.settings.video_url.id | append: '?autoplay=1'
+              endif
+            else
+              assign product_videos = product.media | where: 'media_type', 'video'
+              if product_videos.size > 1
+                assign watch_video = product_videos[1]
+              else
+                assign watch_video = product_videos.first
+              endif
+              if watch_video
+                for source in watch_video.sources
+                  if source.format == 'mp4'
+                    assign native_src = source.url
+                  endif
+                endfor
+              endif
+            endif
+            assign poster = mf.video_poster.value | default: block.settings.poster
+            if poster == blank and watch_video
+              assign poster = watch_video.preview_image
+            endif
+            if poster == blank
+              assign poster = product.featured_image
+            endif
+          -%}
+          {%- if embed != blank or native_src != blank -%}
+            <section class="pblock" {{ block.shopify_attributes }}>
+              <div class="video-card">
+                {%- if poster -%}{{ poster | image_url: width: 1800 | image_tag: loading: 'lazy', class: 'video-card__poster', widths: '700,1200,1800', sizes: '(min-width: 990px) 900px, 100vw' }}{%- endif -%}
+                <button type="button" class="video-card__btn" {% if embed != blank %}data-video-open="{{ embed }}"{% else %}data-video-native="{{ native_src }}"{% endif %}>
+                  {% render 'icon', name: 'play' %} {{ block.settings.button_label }}
+                </button>
+              </div>
+            </section>
+          {%- endif -%}
+
+        {%- when 'text_link' -%}
+          <p class="pblock pblock--center" {{ block.shopify_attributes }}>
+            <a class="text-link" href="{{ block.settings.url | default: '#' }}">{{ block.settings.label }}</a>
+          </p>
+
+        {%- when '@app' -%}
+          {% render block %}
+      {%- endcase -%}
+    {%- endfor -%}
+  </div>
+
+  <aside class="donation-panel" id="donation" data-donation aria-label="{{ section.settings.panel_heading | escape }}">
+    <div class="donation-panel__top">
+      {%- if settings.logo_mark != blank -%}
+        {{ settings.logo_mark | image_url: width: 400 | image_tag: class: 'donation-panel__mark', alt: shop.name, loading: 'lazy' }}
+      {%- endif -%}
+      <button type="button" class="donation-panel__close" data-donation-close aria-label="{{ 'general.close' | t | default: 'Close' }}">{% render 'icon', name: 'close' %}</button>
+    </div>
+    <div class="donation-panel__inner">
+      {%- if ended -%}
+        <h2 class="donation-panel__heading">{{ 'giveaway.ended' | t }}</h2>
+        <p class="donation-panel__ended">{{ 'giveaway.ended_text' | t }}</p>
+      {%- else -%}
+        {%- if section.settings.panel_heading != blank -%}
+          <h2 class="donation-panel__heading">{{ section.settings.panel_heading }}</h2>
+        {%- endif -%}
+        <div class="donation-panel__meta">
+          {%- if mf.giveaway_number != blank or draw_date != blank -%}
+            <p>
+              {%- if mf.giveaway_number != blank -%}{{ section.settings.number_label }} {{ mf.giveaway_number }}{%- endif -%}
+              {%- if mf.giveaway_number != blank and draw_date != blank -%}<span class="donation-panel__sep" aria-hidden="true">|</span>{%- endif -%}
+              {%- if draw_date != blank -%}{{ section.settings.drawn_label }} {{ draw_date | date: settings.date_format }}{%- endif -%}
+            </p>
+          {%- endif -%}
+          {%- if end_date != blank -%}
+            <p>{{ section.settings.panel_closes_label }} {% render 'countdown', end: end_date, style: 'inline' %}</p>
+          {%- endif -%}
+        </div>
+
+        {%- if section.settings.show_promo -%}
+          <div class="promo-box" data-promo data-success="{{ 'giveaway.promo_applied' | t | escape }}" data-error="{{ 'giveaway.promo_error' | t | escape }}">
+            <div class="promo-box__row" data-promo-row>
+              <span class="promo-box__label">{{ section.settings.promo_label }}</span>
+              <button type="button" class="btn btn--green" data-promo-toggle>{{ section.settings.promo_button }}</button>
+            </div>
+            <form class="promo-box__form" data-promo-form hidden>
+              <input type="text" name="code" class="promo-box__input" placeholder="{{ section.settings.promo_placeholder | escape }}" autocomplete="off" required>
+              <button type="submit" class="btn btn--green">{{ section.settings.promo_apply }}</button>
+            </form>
+            <p class="promo-box__msg" data-promo-msg role="status" hidden></p>
+          </div>
+        {%- endif -%}
+
+        {%- assign featured_count = 0 -%}
+        {%- for variant in product.variants -%}
+          {%- if variant.metafields.custom.badge != blank -%}
+            {%- assign featured_count = featured_count | plus: 1 -%}
+            {% render 'ticket-option', variant: variant, product: product, featured: true %}
+          {%- endif -%}
+        {%- endfor -%}
+
+        {%- if section.settings.list_heading != blank -%}
+          <h3 class="donation-panel__subheading">{{ section.settings.list_heading }}</h3>
+        {%- endif -%}
+        <div class="ticket-list" data-ticket-list>
+          {%- for variant in product.variants -%}
+            {% render 'ticket-option', variant: variant, product: product, featured: false %}
+          {%- endfor -%}
+          <div class="ticket-list__more" data-ticket-more-wrap data-label="{{ section.settings.more_label | escape }}" data-label-one="{{ section.settings.more_label_one | escape }}">
+            <button type="button" class="ticket-list__more-btn" data-ticket-more tabindex="-1">
+              {% render 'icon', name: 'arrow-down' %}
+              <span data-ticket-more-text></span>
+            </button>
+          </div>
+        </div>
+      {%- endif -%}
+    </div>
+  </aside>
+</div>
+
+{%- unless ended -%}
+  <div class="mobile-cta">
+    <div class="mobile-cta__text">
+      {%- if section.settings.mobile_cta_title != blank -%}<p class="mobile-cta__title">{{ section.settings.mobile_cta_title }}</p>{%- endif -%}
+      {%- if section.settings.mobile_cta_sub != blank -%}<p class="mobile-cta__sub">{{ section.settings.mobile_cta_sub | replace: '[price]', product.price_min | money }}</p>{%- endif -%}
+    </div>
+    <a class="mobile-cta__btn" href="#donation" data-donation-open>{{ section.settings.mobile_cta }}</a>
+  </div>
+{%- endunless -%}
+
+{%- liquid
+  assign cta_sub = section.settings.rules_cta_sub | replace: '[price]', product.price_min | money
+  assign cta_label = ''
+  unless ended
+    assign cta_label = section.settings.mobile_cta
+  endunless
+-%}
+{%- if rules != blank -%}
+  {%- capture rules_html -%}{{ rules | metafield_tag }}{%- endcapture -%}
+  {% render 'info-modal', modal_id: 'official-rules', title: section.settings.rules_title, content: rules_html, cta_title: section.settings.panel_heading, cta_sub: cta_sub, cta_label: cta_label %}
+{%- endif -%}
+{%- if has_details -%}
+  {%- capture details_html -%}
+    {%- if details_image != blank -%}
+      <div class="details-hero">{{ details_image | image_url: width: 1800 | image_tag: loading: 'lazy', widths: '700,1200,1800', sizes: '(min-width: 990px) 900px, 100vw', alt: details_title }}</div>
+    {%- endif -%}
+    {%- if details_intro != blank -%}{{ details_intro | metafield_tag }}{%- endif -%}
+    {%- if spec_items != blank -%}
+      <ul class="spec-grid">
+        {%- for item in spec_items -%}
+          {%- liquid
+            if item contains '|'
+              assign icon_name = item | split: '|' | first | strip | downcase
+              assign spec_text = item | split: '|' | last | strip
+            else
+              assign icon_name = 'car'
+              assign spec_text = item
+            endif
+          -%}
+          <li class="spec-grid__item"><span class="spec-grid__icon">{% render 'spec-icon', name: icon_name %}</span><span>{{ spec_text }}</span></li>
+        {%- endfor -%}
+      </ul>
+    {%- endif -%}
+    {%- if details_body != blank -%}{{ details_body | metafield_tag }}{%- endif -%}
+  {%- endcapture -%}
+  {% render 'info-modal', modal_id: 'prize-details', title: details_title, content: details_html, cta_title: section.settings.panel_heading, cta_sub: cta_sub, cta_label: cta_label %}
+{%- endif -%}
+
+<dialog class="video-modal" data-video-modal>
+  <button type="button" class="lightbox__close" data-video-close aria-label="{{ 'general.close' | t }}">{% render 'icon', name: 'close' %}</button>
+  <div class="video-modal__frame" data-video-frame></div>
+</dialog>
+
+<script type="application/ld+json">
+  {{ product | structured_data }}
+</script>
+
+{% schema %}
+{
+  "name": "Página do sorteio",
+  "class": "section-main-product",
+  "settings": [
+    { "type": "header", "content": "Abas" },
+    { "type": "text", "id": "tab_details", "label": "Aba de detalhes", "default": "Prize Details" },
+    { "type": "text", "id": "tab_winners", "label": "Aba de ganhadores", "default": "Winners" },
+    { "type": "url", "id": "winners_url", "label": "Link da aba de ganhadores" },
+    { "type": "header", "content": "Banner" },
+    { "type": "checkbox", "id": "show_hero", "label": "Mostrar banner", "default": true, "info": "Usa o vídeo do produto, o metacampo custom.hero_image ou a imagem principal." },
+    { "type": "text", "id": "hero_end_label", "label": "Selo de encerramento no banner", "default": "ENDS" },
+    { "type": "header", "content": "Informações" },
+    { "type": "text", "id": "number_label", "label": "Rótulo do número", "default": "Giveaway No." },
+    { "type": "text", "id": "drawn_label", "label": "Rótulo da data do sorteio", "default": "Drawn:" },
+    { "type": "text", "id": "remaining_label", "label": "Rótulo do tempo restante", "default": "Time Remaining:" },
+    { "type": "header", "content": "Painel de doação" },
+    { "type": "text", "id": "panel_heading", "label": "Título", "default": "ENTER FOR A CHANCE TO WIN" },
+    { "type": "checkbox", "id": "show_promo", "label": "Mostrar campo de cupom", "default": true },
+    { "type": "text", "id": "promo_label", "label": "Texto do cupom", "default": "ENTER PROMO CODE" },
+    { "type": "text", "id": "promo_button", "label": "Botão do cupom", "default": "ADD CODE" },
+    { "type": "text", "id": "promo_placeholder", "label": "Placeholder do cupom", "default": "Enter your code" },
+    { "type": "text", "id": "promo_apply", "label": "Botão aplicar", "default": "APPLY" },
+    { "type": "text", "id": "list_heading", "label": "Título da lista de valores", "default": "Select Your Entry Amount" },
+    { "type": "text", "id": "panel_closes_label", "label": "Texto antes da contagem (celular)", "default": "Closes in:" },
+    { "type": "text", "id": "more_label", "label": "Aviso de mais opções (celular)", "default": "[count] more ticket options", "info": "[count] é trocado pela quantidade de opções abaixo da tela; diminui conforme rola." },
+    { "type": "text", "id": "more_label_one", "label": "Aviso de mais opções, singular", "default": "1 more ticket option" },
+    { "type": "header", "content": "Barra fixa no celular" },
+    { "type": "text", "id": "mobile_cta_title", "label": "Título", "default": "ENTER FOR A CHANCE TO WIN" },
+    { "type": "text", "id": "mobile_cta_sub", "label": "Subtítulo", "default": "Enter to Win from just [price]!", "info": "[price] é trocado pelo menor preço do produto." },
+    { "type": "text", "id": "mobile_cta", "label": "Botão", "default": "ENTER NOW" },
+    { "type": "header", "content": "Janela do regulamento" },
+    { "type": "text", "id": "rules_title", "label": "Título da janela", "default": "Official Rules" },
+    { "type": "text", "id": "rules_cta_sub", "label": "Texto abaixo do título do rodapé", "default": "Enter to win from just [price]!", "info": "[price] é trocado pelo menor preço do produto." }
+  ],
+  "blocks": [
+    { "type": "@app" },
+    {
+      "type": "gallery",
+      "name": "Galeria",
+      "limit": 1,
+      "settings": [
+        { "type": "text", "id": "heading", "label": "Título", "default": "Explore the prize" },
+        { "type": "text", "id": "button_label", "label": "Botão", "default": "VIEW ALL PHOTOS" }
+      ]
+    },
+    {
+      "type": "description",
+      "name": "Descrição do produto",
+      "limit": 1,
+      "settings": [
+        { "type": "text", "id": "heading", "label": "Título", "info": "O metacampo custom.prize_headline tem prioridade, se preenchido." },
+        { "type": "checkbox", "id": "show_details_card", "label": "Mostrar card de detalhes do prêmio dentro da descrição", "default": true },
+        { "type": "text", "id": "details_before", "label": "Inserir o card antes do título", "default": "Key Giveaway Dates", "info": "O card entra logo antes do trecho da descrição que começa com este texto. Se não encontrar, fica no fim da descrição." }
+      ]
+    },
+    {
+      "type": "link_card",
+      "name": "Card com link",
+      "settings": [
+        { "type": "image_picker", "id": "image", "label": "Imagem (opcional)" },
+        { "type": "text", "id": "title", "label": "Título", "default": "Official Rules" },
+        { "type": "text", "id": "subtitle", "label": "Subtítulo" },
+        { "type": "url", "id": "url", "label": "Link" },
+        { "type": "checkbox", "id": "new_tab", "label": "Abrir em nova aba", "default": false },
+        { "type": "checkbox", "id": "open_rules", "label": "Abrir regulamento em tela cheia", "default": false, "info": "Mostra o metacampo custom.official_rules do produto em uma janela, em vez de seguir o link." },
+        { "type": "checkbox", "id": "open_details", "label": "Abrir detalhes do prêmio em tela cheia", "default": false, "info": "Usa os metacampos de detalhes do produto (imagem, título, textos e especificações). O card some se o produto não tiver esses dados." }
+      ]
+    },
+    {
+      "type": "key_dates",
+      "name": "Key Giveaway Dates",
+      "limit": 1,
+      "settings": [
+        { "type": "text", "id": "heading", "label": "Título", "default": "Key Giveaway Dates" },
+        { "type": "text", "id": "start_label", "label": "Rótulo início", "default": "Giveaway Starts" },
+        { "type": "text", "id": "end_label", "label": "Rótulo encerramento", "default": "Giveaway Ends" },
+        { "type": "text", "id": "draw_label", "label": "Rótulo sorteio", "default": "Winner Draw Date" },
+        { "type": "richtext", "id": "text", "label": "Texto abaixo" }
+      ]
+    },
+    {
+      "type": "rich_text",
+      "name": "Texto",
+      "settings": [
+        { "type": "text", "id": "heading", "label": "Título", "default": "Enter Today" },
+        { "type": "richtext", "id": "text", "label": "Texto", "default": "<p>Write a short message inviting customers to enter.</p>" }
+      ]
+    },
+    {
+      "type": "image",
+      "name": "Imagem",
+      "settings": [
+        { "type": "image_picker", "id": "image", "label": "Imagem" }
+      ]
+    },
+    {
+      "type": "video",
+      "name": "Vídeo",
+      "settings": [
+        { "type": "paragraph", "content": "Cada produto usa, nesta ordem: o metacampo 'Vídeo (YouTube/Vimeo)', o link abaixo, ou o vídeo enviado na mídia do produto (o 2º vídeo, se houver dois; senão o 1º)." },
+        { "type": "image_picker", "id": "poster", "label": "Capa padrão", "info": "O metacampo 'Capa do vídeo' do produto tem prioridade." },
+        { "type": "video_url", "id": "video_url", "label": "URL padrão do YouTube ou Vimeo", "accept": ["youtube", "vimeo"] },
+        { "type": "text", "id": "button_label", "label": "Botão", "default": "Watch the video" }
+      ]
+    },
+    {
+      "type": "text_link",
+      "name": "Link de texto",
+      "settings": [
+        { "type": "text", "id": "label", "label": "Texto", "default": "Terms and Conditions" },
+        { "type": "url", "id": "url", "label": "Link" }
+      ]
+    }
+  ]
+}
+{% endschema %}

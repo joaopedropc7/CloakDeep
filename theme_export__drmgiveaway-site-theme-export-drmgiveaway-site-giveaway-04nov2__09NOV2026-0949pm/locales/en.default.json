@@ -1,0 +1,56 @@
+{
+  "general": {
+    "skip_to_content": "Skip to content",
+    "menu": "Menu",
+    "close": "Close",
+    "login": "Login",
+    "account": "Account",
+    "cart": "Cart",
+    "home": "Home",
+    "previous": "Previous",
+    "next": "Next",
+    "back": "Back"
+  },
+  "cart": {
+    "title": "Your cart",
+    "empty": "Your cart is empty.",
+    "continue": "Browse giveaways",
+    "subtotal": "Subtotal",
+    "checkout": "Checkout",
+    "remove": "Remove",
+    "update": "Update",
+    "taxes": "Taxes and discounts calculated at checkout."
+  },
+  "giveaway": {
+    "number": "Giveaway No.",
+    "ends": "Ends",
+    "drawn": "Drawn",
+    "ended": "Giveaway closed",
+    "ended_text": "Entries for this giveaway are now closed.",
+    "enter_now": "Enter now",
+    "view": "View details",
+    "promo_applied": "Promo code applied! You'll see it at checkout.",
+    "promo_error": "Could not apply the code.",
+    "photo_counter": "photo"
+  },
+  "search": {
+    "title": "Search",
+    "placeholder": "Search giveaways",
+    "submit": "Search",
+    "no_results": "No results for \"{{ terms }}\"."
+  },
+  "notfound": {
+    "title": "Page not found",
+    "text": "The page you are looking for does not exist.",
+    "back": "Back to home"
+  },
+  "blog": {
+    "read_more": "Read more",
+    "back": "Back"
+  },
+  "password": {
+    "title": "Coming soon",
+    "enter": "Enter using password",
+    "submit": "Enter"
+  }
+}

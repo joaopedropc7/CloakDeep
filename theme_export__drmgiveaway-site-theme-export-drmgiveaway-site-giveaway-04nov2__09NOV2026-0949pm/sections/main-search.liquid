@@ -1,0 +1,21 @@
+<section class="section container">
+  <h1 class="section-title">{{ 'search.title' | t }}</h1>
+  <form action="{{ routes.search_url }}" method="get" class="search-form">
+    <input type="search" name="q" value="{{ search.terms | escape }}" placeholder="{{ 'search.placeholder' | t }}">
+    <input type="hidden" name="type" value="product">
+    <button class="btn btn--red" type="submit">{{ 'search.submit' | t }}</button>
+  </form>
+  {%- if search.performed -%}
+    {%- paginate search.results by 18 -%}
+      <div class="grid grid--3">
+        {%- for item in search.results -%}
+          {%- if item.object_type == 'product' -%}{% render 'giveaway-card', product: item, mode: 'active' %}{%- endif -%}
+        {%- else -%}
+          <p>{{ 'search.no_results' | t: terms: search.terms }}</p>
+        {%- endfor -%}
+      </div>
+      {%- if paginate.pages > 1 -%}<nav class="pagination">{{ paginate | default_pagination }}</nav>{%- endif -%}
+    {%- endpaginate -%}
+  {%- endif -%}
+</section>
+{% schema %}{ "name": "Busca", "settings": [] }{% endschema %}

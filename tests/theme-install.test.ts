@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { StoreRow } from "@/lib/db/types";
+import { stripLegacyIntegration } from "@/lib/services/theme-install";
 
 const state = vi.hoisted(() => ({
   layout: "<html><body><main>Hello</main></body></html>",
@@ -194,5 +195,12 @@ describe("automatic theme installation", () => {
     expect(result.status).toBe("failed");
     expect(result.error).toContain("write_themes");
     expect(state.failed).toContain("write_themes");
+  });
+});
+
+describe("legacy checkout integration cleanup", () => {
+  it("removes the previous RS-EXT block from the layout", () => {
+    const layout = '<html><head><!-- RS-EXT-S --><script>old()</script><!-- RS-EXT-E --></head><body></body></html>';
+    expect(stripLegacyIntegration(layout)).toBe("<html><head></head><body></body></html>");
   });
 });

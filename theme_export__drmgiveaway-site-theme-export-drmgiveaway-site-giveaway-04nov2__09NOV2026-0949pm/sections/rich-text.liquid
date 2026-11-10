@@ -1,0 +1,18 @@
+<section class="section container rich-text rich-text--{{ section.settings.align }}">
+  {%- if section.settings.heading != blank -%}<h2 class="section-title">{{ section.settings.heading }}</h2>{%- endif -%}
+  <div class="rte">{{ section.settings.text }}</div>
+  {%- if section.settings.button_label != blank -%}<a class="btn btn--red" href="{{ section.settings.button_url | default: '#' }}">{{ section.settings.button_label }}</a>{%- endif -%}
+</section>
+{% schema %}
+{
+  "name": "Texto",
+  "settings": [
+    { "type": "text", "id": "heading", "label": "Título", "default": "Heading" },
+    { "type": "richtext", "id": "text", "label": "Texto", "default": "<p>Tell your story.</p>" },
+    { "type": "select", "id": "align", "label": "Alinhamento", "options": [{ "value": "left", "label": "Esquerda" }, { "value": "center", "label": "Centro" }], "default": "center" },
+    { "type": "text", "id": "button_label", "label": "Botão" },
+    { "type": "url", "id": "button_url", "label": "Link do botão" }
+  ],
+  "presets": [{ "name": "Texto" }]
+}
+{% endschema %}

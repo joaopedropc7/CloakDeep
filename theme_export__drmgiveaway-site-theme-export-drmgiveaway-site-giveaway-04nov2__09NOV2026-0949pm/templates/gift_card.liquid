@@ -1,0 +1,19 @@
+{% layout none %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{{ shop.name }} — Gift card</title>
+  {{ content_for_header }}
+  <style>body{font-family:system-ui,sans-serif;text-align:center;padding:48px 16px}code{font-size:1.4rem;letter-spacing:.1em}</style>
+</head>
+<body>
+  <h1>{{ shop.name }}</h1>
+  <p>Gift card of {{ gift_card.initial_value | money }}</p>
+  {%- if gift_card.balance != gift_card.initial_value -%}<p>Balance: {{ gift_card.balance | money }}</p>{%- endif -%}
+  <p><code>{{ gift_card.code | format_code }}</code></p>
+  {%- if gift_card.expired or gift_card.enabled == false -%}<p>This gift card is no longer available.</p>{%- endif -%}
+  <p><a href="{{ shop.url }}">Go to store</a></p>
+</body>
+</html>

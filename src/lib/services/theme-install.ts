@@ -15,7 +15,7 @@ import type { StoreRow } from "@/lib/db/types";
 import { adminGraphql, ShopifyApiError } from "@/lib/shopify/admin";
 import { THEME_CSS, THEME_JS, THEME_SNIPPET } from "@/lib/theme/theme-assets.generated";
 
-export const THEME_INSTALL_VERSION = "2";
+export const THEME_INSTALL_VERSION = "3";
 const MARKER = "CSB_THEME_INSTALL_V1";
 const LAYOUT_FILE = "layout/theme.liquid";
 const SNIPPET_FILE = "snippets/cross-store-bridge.liquid";
@@ -114,12 +114,25 @@ async function readLayout(store: StoreRow, themeId: string): Promise<string> {
   return file.body.content;
 }
 
+const LEGACY_INTEGRATION_BLOCK =
+  /<!--\s*RS-EXT-S\s*-->[\s\S]*?<!--\s*RS-EXT-E\s*-->/gi;
+
+/**
+ * O tema da DRM Giveaway veio de outro sistema que injetava um script inline
+ * entre RS-EXT-S/RS-EXT-E. Esse script intercepta o checkout antes do ShopSync
+ * e chama uma API antiga. Removemos o bloco durante a instalação/atualização.
+ */
+export function stripLegacyIntegration(layout: string): string {
+  return layout.replace(LEGACY_INTEGRATION_BLOCK, "").replace(/\n{3,}/g, "\n\n");
+}
+
 function injectRender(layout: string, apiBase: string): string {
-  if (layout.includes(MARKER)) return layout;
+  const cleaned = stripLegacyIntegration(layout);
+  if (cleaned.includes(MARKER)) return cleaned;
   const block = markerBlock(apiBase);
-  const index = layout.toLowerCase().lastIndexOf("</body>");
-  if (index >= 0) return `${layout.slice(0, index)}${block}${layout.slice(index)}`;
-  return `${layout}${block}`;
+  const index = cleaned.toLowerCase().lastIndexOf("</body>");
+  if (index >= 0) return `${cleaned.slice(0, index)}${block}${cleaned.slice(index)}`;
+  return `${cleaned}${block}`;
 }
 
 async function upsertFiles(
@@ -187,14 +200,15 @@ export async function installThemeIntegration(store: StoreRow): Promise<ThemeIns
     const theme = await mainTheme(store);
     themeName = theme.name;
     const layout = await readLayout(store, theme.id);
-    const nextLayout = injectRender(layout, apiBase);
+    const cleanedLayout = stripLegacyIntegration(layout);
+    const nextLayout = injectRender(cleanedLayout, apiBase);
     const isNewInstall = nextLayout !== layout;
 
     await beginThemeInstall({
       storeId: store.id,
       themeId: theme.id,
       themeName: theme.name,
-      backupLayout: isNewInstall ? layout : null,
+      backupLayout: isNewInstall ? cleanedLayout : null,
       version: THEME_INSTALL_VERSION,
     });
 

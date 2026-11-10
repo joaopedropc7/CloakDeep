@@ -20,7 +20,7 @@ Integração transparente entre vitrines **Shopify** e destinos **Shopify** ou *
 - **Shopify cart permalink** — abertura do checkout da Loja B com variantes e quantidades validadas, sem token da Storefront API.
 - **Lojas independentes + pares Vitrine↔Checkout** — cada loja tem tipo, nome e credenciais próprias; uma vitrine pode ter vários pares, mas só um ativo; um checkout pode atender várias vitrines.
 - **`write_themes` + instalação automática no tema** — o snippet é inserido no layout da Loja A via Admin API (`themeFilesUpsert`); sem app block/app embed. Requer exemption da Shopify.
-- **Vitest** — 38 testes de unidade e de fluxo com Shopify/banco simulados.
+- **Vitest** — 39 testes de unidade e de fluxo com Shopify/banco simulados.
 - **Operação administrativa** — integrações com renomear/desativar/excluir, edição de loja, teste de conexão, escopos por loja, auto-mapeamento por SKU, fila de revisão e transferências filtradas com detalhe.
 - **Catálogo agendado** — cron diário sincroniza uma loja por execução, além da importação manual.
 

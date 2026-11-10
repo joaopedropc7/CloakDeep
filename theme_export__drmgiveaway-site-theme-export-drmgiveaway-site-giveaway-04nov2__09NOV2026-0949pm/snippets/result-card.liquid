@@ -1,0 +1,38 @@
+{%- liquid
+  assign mf = product.metafields.custom
+  assign draw_date = mf.draw_date.value
+  assign status = section.settings.status_pending
+  if draw_date != blank
+    assign now_s = 'now' | date: '%s' | plus: 0
+    assign draw_s = draw_date | date: '%s' | plus: 86400
+    if now_s > draw_s
+      assign status = section.settings.status_drawn
+    endif
+  endif
+  if mf.winner != blank
+    assign status = mf.winner
+  endif
+  assign card_url = section.settings.results_url | default: product.url
+-%}
+<article class="rcard">
+  <a class="rcard__media" href="{{ product.url }}" tabindex="-1" aria-hidden="true">
+    {%- if product.featured_image -%}
+      {{ product.featured_image | image_url: width: 1200 | image_tag: loading: 'lazy', widths: '600,900,1200', sizes: '(min-width: 990px) 50vw, 100vw', alt: product.title }}
+    {%- else -%}
+      {{ 'product-1' | placeholder_svg_tag: 'gtile__placeholder' }}
+    {%- endif -%}
+  </a>
+  <div class="rcard__body">
+    <div class="rcard__meta">
+      {%- if settings.logo_mark != blank -%}{{ settings.logo_mark | image_url: width: 300 | image_tag: class: 'rcard__mark', alt: '', loading: 'lazy' }}{%- else -%}<span></span>{%- endif -%}
+      <span class="rcard__info">
+        {%- if mf.giveaway_number != blank -%}<span>{{ 'giveaway.number' | t }} {{ mf.giveaway_number }}</span>{%- endif -%}
+        {%- if draw_date != blank -%}<span>{{ draw_date | date: '%b %-d, %Y' }}</span>{%- endif -%}
+      </span>
+    </div>
+    <h3 class="rcard__title"><a href="{{ product.url }}">{{ product.title }}</a></h3>
+    <p class="rcard__status-label">{{ section.settings.status_label }}</p>
+    <span class="rcard__status">{{ status }}</span>
+    {%- if section.settings.button_label != blank -%}<a class="rcard__link" href="{{ card_url }}">{{ section.settings.button_label }}</a>{%- endif -%}
+  </div>
+</article>

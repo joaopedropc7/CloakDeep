@@ -1,0 +1,57 @@
+{
+  "sections": {
+    "main": {
+      "type": "main-product",
+      "blocks": {
+        "gallery": {
+          "type": "gallery",
+          "settings": {}
+        },
+        "description": {
+          "type": "description",
+          "settings": {
+            "show_details_card": true,
+            "details_before": "Key Giveaway Dates"
+          }
+        },
+        "sticker": {
+          "type": "image",
+          "settings": {}
+        },
+        "video": {
+          "type": "video",
+          "settings": {}
+        },
+        "rules": {
+          "type": "link_card",
+          "settings": {
+            "title": "Official Rules",
+            "subtitle": "Read the complete official rules",
+            "open_rules": true
+          }
+        },
+        "terms": {
+          "type": "text_link",
+          "settings": {
+            "label": "Terms and Conditions"
+          }
+        }
+      },
+      "block_order": [
+        "gallery",
+        "description",
+        "sticker",
+        "video",
+        "rules",
+        "terms"
+      ],
+      "settings": {
+        "winners_url": "/pages/winners",
+        "hero_end_label": ""
+      }
+    }
+  },
+  "order": [
+    "main"
+  ]
+}

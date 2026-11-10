@@ -1,0 +1,33 @@
+<div class="cart-drawer" data-cart-drawer hidden>
+  <div class="cart-drawer__overlay" data-cart-close></div>
+  <aside class="cart-drawer__panel" role="dialog" aria-modal="true" aria-labelledby="cart-drawer-title">
+    <div class="cart-drawer__main">
+      <button type="button" class="cart-drawer__x" data-cart-close aria-label="{{ 'general.close' | t }}">{% render 'icon', name: 'close' %}</button>
+      <h2 class="cart-drawer__title" id="cart-drawer-title">{{ settings.drawer_title }}</h2>
+      <div class="cart-drawer__item" data-cart-item>
+        <button type="button" class="cart-drawer__trash" data-cart-remove aria-label="{{ 'cart.remove' | t }}">
+          <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M4 6h16M9 6V4h6v2M6.5 6l1 14h9l1-14M10 10v7M14 10v7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        {%- if settings.logo_mark != blank -%}
+          {{ settings.logo_mark | image_url: width: 400 | image_tag: class: 'cart-drawer__mark', alt: '', loading: 'lazy' }}
+        {%- endif -%}
+        <div class="cart-drawer__row">
+          <div class="cart-drawer__info">
+            <p class="cart-drawer__draw" data-ci-draw></p>
+            <p class="cart-drawer__name" data-ci-title></p>
+            <p class="cart-drawer__no" data-ci-number></p>
+          </div>
+          <div class="cart-drawer__price">
+            <span data-ci-price></span>
+            <strong data-ci-label></strong>
+          </div>
+        </div>
+      </div>
+      <p class="cart-drawer__empty" data-cart-empty hidden>{{ settings.drawer_empty }}</p>
+      <div class="cart-drawer__actions">
+        <button type="button" class="btn cart-drawer__more" data-cart-close>{{ settings.drawer_more }}</button>
+        <a class="btn btn--red cart-drawer__go" href="{{ routes.cart_url }}">{% render 'icon', name: 'cart' %} {{ settings.drawer_cart }} (<span data-cart-count-drawer>{{ cart.item_count }}</span>)</a>
+      </div>
+    </div>
+  </aside>
+</div>

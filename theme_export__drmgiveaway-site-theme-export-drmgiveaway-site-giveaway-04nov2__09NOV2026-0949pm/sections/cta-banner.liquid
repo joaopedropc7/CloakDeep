@@ -1,0 +1,20 @@
+<section class="cta-banner cta-banner--{{ section.settings.background }}">
+  <div class="container cta-banner__inner">
+    {%- if section.settings.heading != blank -%}<h2 class="cta-banner__title">{{ section.settings.heading }}</h2>{%- endif -%}
+    {%- if section.settings.button_label != blank -%}
+      <a class="btn btn--red cta-banner__btn" href="{{ section.settings.button_url | default: '#' }}">{{ section.settings.button_label }}</a>
+    {%- endif -%}
+  </div>
+</section>
+{% schema %}
+{
+  "name": "Faixa com chamada",
+  "settings": [
+    { "type": "text", "id": "heading", "label": "Título" },
+    { "type": "text", "id": "button_label", "label": "Botão" },
+    { "type": "url", "id": "button_url", "label": "Link do botão" },
+    { "type": "select", "id": "background", "label": "Fundo", "options": [{ "value": "white", "label": "Branco" }, { "value": "gray", "label": "Cinza" }], "default": "white" }
+  ],
+  "presets": [{ "name": "Faixa com chamada" }]
+}
+{% endschema %}
