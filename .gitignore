@@ -1,0 +1,14 @@
+node_modules/
+.next/
+out/
+.vercel/
+.env.local
+.env.*.local
+.env.production.local
+.env.development.local
+.npm-cache/
+coverage/
+*.tsbuildinfo
+.DS_Store
+.shopify/
+src/lib/env.generated.ts

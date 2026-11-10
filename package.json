@@ -1,0 +1,40 @@
+{
+  "name": "shopsync",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ShopSync — ponte transparente entre vitrines Shopify e checkouts Shopify ou sites externos.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "admin:hash": "node scripts/hash-admin-password.mjs",
+    "secrets:generate": "node scripts/generate-secrets.mjs",
+    "theme:assets": "node scripts/generate-theme-assets.mjs",
+    "prebuild": "node scripts/generate-runtime-env.mjs && node scripts/generate-theme-assets.mjs",
+    "predev": "node scripts/generate-runtime-env.mjs && node scripts/generate-theme-assets.mjs",
+    "env:generate": "node scripts/generate-runtime-env.mjs",
+    "pretest": "node scripts/generate-runtime-env.mjs",
+    "pretypecheck": "node scripts/generate-runtime-env.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.119.0",
+    "decimal.js": "10.6.0",
+    "next": "16.4.5",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "server-only": "0.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.2",
+    "typescript": "5.9.3",
+    "vitest": "5.1.0"
+  },
+  "engines": {
+    "node": ">=20.9"
+  }
+}

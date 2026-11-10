@@ -1,0 +1,20 @@
+{%- comment -%}
+  Cross-Store Bridge — interceptação do checkout (opção B)
+  Este snippet é instalado automaticamente pelo painel no layout/theme.liquid,
+  ou pode ser incluído manualmente antes de </body>:
+    {% render 'cross-store-bridge' %}
+
+  Substitua csb_api_base pelo APP_URL do painel.
+{%- endcomment -%}
+{%- assign csb_api_base = 'https://app.exemplo.com' -%}
+
+<div
+  data-csb-config
+  data-api-base="{{ csb_api_base | escape }}"
+  data-shop="{{ shop.permanent_domain | escape }}"
+  data-shop-name="{{ shop.name | escape }}"
+  data-template="{{ template.name | escape }}"
+  hidden
+></div>
+{{ 'cross-store.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'cross-store.js' | asset_url }}" defer></script>

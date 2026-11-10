@@ -1,0 +1,69 @@
+.csb-checkout-notice {
+  margin: 0.75rem 0 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(23, 32, 42, 0.2);
+  border-left: 4px solid #1f5f4b;
+  border-radius: 9px;
+  background: #f4faf7;
+  color: #17202a;
+  font-family: inherit;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.csb-checkout-title {
+  display: block;
+  margin-bottom: 0.2rem;
+  font-size: 0.95rem;
+}
+
+.csb-checkout-text {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.csb-checkout-issues {
+  margin-top: 0.65rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid #e3b4b4;
+  border-radius: 8px;
+  background: #fdf1f1;
+  color: #6d1a1a;
+  font-size: 0.86rem;
+}
+
+.csb-checkout-issues[hidden] {
+  display: none !important;
+}
+
+.csb-checkout-error {
+  margin: 0 0 0.35rem;
+  font-weight: 700;
+}
+
+.csb-checkout-issues-list {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.csb-checkout-issues-list li {
+  margin: 0.2rem 0;
+}
+
+.csb-checkout-fallback {
+  display: inline-block;
+  margin-top: 0.55rem;
+  color: #164536;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.csb-checkout-busy {
+  opacity: 0.85;
+}
+
+.csb-checkout-busy .csb-checkout-title::after {
+  content: " — verificando...";
+  font-weight: 400;
+  opacity: 0.75;
+}
