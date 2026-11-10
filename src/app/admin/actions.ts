@@ -34,7 +34,6 @@ import { testStoreConnection } from "@/lib/services/store-health";
 import { autoMapDraftsBySku } from "@/lib/services/mappings";
 import { isValidShopDomain, normalizeShopDomain } from "@/lib/shopify/oauth";
 import { syncCatalog } from "@/lib/services/catalog";
-import { configureStorefrontAccess } from "@/lib/services/storefront-access";
 import {
   activateExternalMapping,
   activateShopifyMapping,
@@ -451,26 +450,6 @@ export async function saveExternalStoreAction(formData: FormData): Promise<void>
     });
     revalidatePath("/admin/stores");
     redirectWithMessage("/admin/stores", "saved", "Loja B externa configurada.");
-  } catch (error) {
-    if (isRedirectError(error)) throw error;
-    redirectWithMessage("/admin/stores", "error", error instanceof Error ? error.message : "Falha.");
-  }
-}
-
-export async function saveStorefrontTokenAction(formData: FormData): Promise<void> {
-  await requireAdmin();
-  const token = stringField(formData, "token");
-  const kind = stringField(formData, "kind");
-  const apiVersion = stringField(formData, "api_version");
-  try {
-    if (kind !== "private" && kind !== "public") throw new Error("Escolha o tipo de token.");
-    await configureStorefrontAccess({
-      token,
-      kind,
-      apiVersion: apiVersion || "2026-10",
-    });
-    revalidatePath("/admin/stores");
-    redirectWithMessage("/admin/stores", "saved", "Storefront API validada e configurada.");
   } catch (error) {
     if (isRedirectError(error)) throw error;
     redirectWithMessage("/admin/stores", "error", error instanceof Error ? error.message : "Falha.");

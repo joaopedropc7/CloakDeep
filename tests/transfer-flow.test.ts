@@ -100,20 +100,6 @@ vi.mock("@/lib/shopify/admin", () => ({
   fetchLiveVariants: vi.fn(),
 }));
 
-vi.mock("@/lib/shopify/storefront", () => {
-  class StorefrontApiError extends Error {
-    code: string;
-    constructor(message: string, code = "STOREFRONT_ERROR") {
-      super(message);
-      this.code = code;
-    }
-  }
-  return {
-    createDestinationCart: vi.fn(),
-    StorefrontApiError,
-  };
-});
-
 import {
   getIntegrationForStoreA,
   getShopifyStoreByDomain,
@@ -123,7 +109,6 @@ import {
 import { getVariantByExternalId, getVariantsWithProductByIds } from "@/lib/db/catalog";
 import { getMappingById, getMappingsForAVariantIds } from "@/lib/db/mappings";
 import { fetchLiveVariants } from "@/lib/shopify/admin";
-import { createDestinationCart } from "@/lib/shopify/storefront";
 import { completeTransferForBuyer, prepareTransfer, TransferError } from "@/lib/services/transfers";
 
 const STORE_A = "store-a";
@@ -308,14 +293,6 @@ function setupHappyPath(options: { aPrice?: string; bPrice?: string } = {}) {
     }
     return map;
   });
-  vi.mocked(createDestinationCart).mockResolvedValue({
-    cartId: "gid://shopify/Cart/1?key=secret",
-    checkoutUrl: "https://loja-b.myshopify.com/cart/c/abc?_cs=consent",
-    totalQuantity: 2,
-    subtotalAmount: "240.00",
-    currency: "BRL",
-    warnings: [],
-  });
 }
 
 beforeEach(() => {
@@ -355,19 +332,10 @@ describe("transfer business flow", () => {
       buyerIp: "203.0.113.9",
     });
 
-    expect(completed.checkoutUrl).toContain("_cs=consent");
+    expect(completed.checkoutUrl).toContain("https://loja-b.com/cart/202:2");
     expect(completed.checkoutUrl).toContain("utm_source=meta");
     expect(completed.checkoutUrl).toContain("utm_campaign=verao");
     expect(state.transfer?.status).toBe("completed");
-    expect(vi.mocked(createDestinationCart)).toHaveBeenCalledTimes(1);
-    const cartInput = vi.mocked(createDestinationCart).mock.calls[0][0];
-    expect(cartInput.lines[0].variantId).toBe(B_GID);
-    expect(cartInput.lines[0].attributes?.csb_source_sku).toBe("SKU-1");
-    expect(cartInput.lines[0].attributes?.csb_source_product).toBe("Camiseta");
-    expect(cartInput.marketingConsent).toBe(true);
-    expect(cartInput.attributes.utm_source).toBe("meta");
-    expect(cartInput.attributes.csb_sale_owner).toBe("Loja B");
-    expect(cartInput.buyerIp).toBe("203.0.113.9");
   });
 
   it("blocks the entire transfer when one item is not mapped and explains why", async () => {
@@ -423,10 +391,8 @@ describe("transfer business flow", () => {
       token: prepared.token,
       attributionConsent: false,
     });
+    expect(completed.checkoutUrl).toContain("https://loja-b.com/cart/202:1");
     expect(completed.checkoutUrl).not.toContain("utm_source");
-    const cartInput = vi.mocked(createDestinationCart).mock.calls[0][0];
-    expect(cartInput.marketingConsent).toBe(false);
-    expect(cartInput.attributes.utm_source).toBeUndefined();
   });
 
   it("is idempotent for an already completed transfer", async () => {
@@ -437,7 +403,7 @@ describe("transfer business flow", () => {
     const first = await completeTransferForBuyer({ token: prepared.token, attributionConsent: false });
     const second = await completeTransferForBuyer({ token: prepared.token, attributionConsent: false });
     expect(second.checkoutUrl).toBe(first.checkoutUrl);
-    expect(vi.mocked(createDestinationCart)).toHaveBeenCalledTimes(1);
+    expect(first.checkoutUrl).toContain("https://loja-b.com/cart/202:1");
   });
 
   it("rejects unknown transfer tokens", async () => {

@@ -78,9 +78,8 @@ Por decisão operacional, o `.env` é versionado no GitHub e o build gera um mó
 | Senha administrativa única | sem MFA/SSO | colocar atrás de SSO corporativo ou proxy autenticado; usar senha longa |
 | `service_role` comprometida | acesso total ao banco | rotação imediata, least privilege de secrets, auditoria do provedor |
 | Chave de cifra comprometida | tokens legíveis | rotacionar `TOKEN_ENCRYPTION_KEY` com migração de recriptografia; revogar tokens Shopify |
-| Token público da Storefront API | visível se vazar | preferir token privado no servidor |
 | UTMs em atributos do pedido | aparecem no pedido da B | confirmar que é aceitável para o merchant; não enviam PII |
-| Shopify pode ajustar preço/estoque | `cartCreate` valida novamente | falha fechada; comprador refaz a transferência |
+| Shopify pode ajustar preço/estoque | revalidação Admin API antes do permalink | falha fechada; comprador refaz a transferência |
 | Produto "mesmo" é julgamento humano | sistema confere dados, não o objeto físico | dupla confirmação do administrador; revisão periódica |
 | Preview do tema e CORS/CSP | ambiente de preview pode não refletir produção | testar no domínio publicado/`myshopify.com` |
 | CSP `unsafe-inline` | necessário ao bootstrap | implementar nonces em uma evolução |

@@ -1,6 +1,6 @@
 # Configuração externa da Shopify
 
-Este guia cobre o que **não** pode ser feito apenas pelo código local: criar o app na Shopify, configurar URLs/escopos, obter o token da Storefront API da Loja B e autorizar a instalação automática no **código do tema** da Loja A.
+Este guia cobre o que **não** pode ser feito apenas pelo código local: criar o app na Shopify, configurar URLs/escopos e autorizar a instalação automática no **código do tema** da Loja A.
 
 A integração da vitrine **não usa app block, app embed ou theme app extension**. O backend instala automaticamente um snippet global e assets no tema publicado via Admin API (`themeFilesUpsert`), o que exige `write_themes` e exemption da Shopify. O app Shopify é usado para OAuth, Admin API, instalação do tema e webhooks.
 
@@ -90,30 +90,13 @@ Se o callback falhar:
 
 ## 4. Conectar a Loja Checkout (Shopify)
 
-Na lista de lojas, clique em **Conectar** na loja Checkout e repita o OAuth. Ela também precisa de `read_products` para importar o catálogo e revalidar preços. Depois do OAuth, a loja fica `pending` até configurar a Storefront API.
+Na lista de lojas, clique em **Conectar** na loja Checkout e repita o OAuth. Ela também precisa de `read_products` para importar o catálogo e revalidar preços. Depois do OAuth, a loja fica ativa para catálogo e checkout; nenhum token da Storefront API é obrigatório.
 
-### 4.1 Criar o token da Storefront API na Loja B
+### 4.1 Checkout da Loja B
 
-O checkout é criado pela Storefront API. O token **não** é o token administrativo do OAuth; ele vem da Headless channel (ou de um app customizado com Storefront API).
+O checkout da Loja B Shopify é aberto por **cart permalink oficial** da Shopify, usando as variantes e quantidades validadas. Não é necessário criar nem configurar token da Storefront API.
 
-1. Na Loja B, instale o canal **Headless** (Shopify App Store).
-2. Crie um storefront.
-3. Em **Storefront API permissions**, habilite:
-   - Product listings (read)
-   - Checkouts (read)
-   - Checkouts (write)
-   - (Selling plans não é necessário para este fluxo.)
-4. Copie o **private access token** (recomendado).
-5. No painel, em **Loja B Shopify → Storefront API**, cole o token, selecione **Privado** e a versão `2026-10`.
-
-Referências:
-
-- <https://shopify.dev/docs/storefronts/headless/building-with-the-storefront-api/getting-started>
-- <https://shopify.dev/docs/api/storefront/2026-10#authentication>
-
-O backend valida o token chamando `shop { name currencyCode }` e exige que a moeda da Storefront API seja igual à moeda administrativa da B. O valor é cifrado e nunca retorna ao browser.
-
-> Se você usar token público, ele é enviado no header `X-Shopify-Storefront-Access-Token`. O token privado usa `Shopify-Storefront-Private-Token` e, quando disponível, o header `Shopify-Storefront-Buyer-IP`. O projeto recomenda o privado.
+Cada comprador recebe um checkout novo no domínio da Loja B.
 
 ## 5. Importar catálogos
 
@@ -171,7 +154,7 @@ O snippet global:
 - envia itens/quantidades ao backend;
 - se todos os itens tiverem mapa, o backend cria o checkout da B e o navegador é redirecionado ao `checkoutUrl`;
 - se algum item não tiver mapa, bloqueia e explica, oferecendo “Continuar na Loja A”;
-- o carrinho da B é criado pelo backend via Storefront API `cartCreate`;
+- o checkout da B é aberto por cart permalink oficial;
 - o comprador vê o aviso de loja responsável/domínio antes de seguir para a B.
 
 ### Se a Shopify negar
@@ -232,7 +215,7 @@ A instalação automática atual foca no checkout padrão da B Shopify; para B e
 | Checkout dinâmico (Shop Pay/Apple Pay) não é interceptado | botão em iframe da Shopify | limitação conhecida; use o checkout padrão do carrinho |
 | Checkout interceptado retorna 409 com `NOT_MAPPED` | item do carrinho sem mapeamento ativo | mapeie a variante e reimporte se necessário; o comprador pode continuar na Loja A |
 | `SOURCE_PRICE_CHANGED` / `DESTINATION_PRICE_CHANGED` | preço mudou desde o snapshot | reimporte o catálogo e reative o mapeamento após conferir |
-| `MISSING_STOREFRONT_TOKEN` | B sem token da Storefront API | configure o token privado no painel |
+
 | `CART_USER_ERRORS` | produto da B não publicado no canal/canal sem permissão, estoque ou variante inválida | confira publicação, estoque e permissões da Headless channel |
 | `invalid_hmac` | secret/redirect/relógio | corrija no Dev Dashboard e no `.env` |
 | Cookie de sessão não persiste | HTTPS/domínio ou SameSite | use o mesmo domínio do `APP_URL`; não abra o painel por IP diferente |

@@ -86,7 +86,7 @@ export default function HomePage() {
                 </span>
                 <div>
                   <strong>Loja B · checkout</strong>
-                  <small>Shopify via Storefront API ou site externo por produto</small>
+                  <small>Shopify via cart permalink ou site externo por produto</small>
                 </div>
               </div>
             </div>

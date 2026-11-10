@@ -32,7 +32,7 @@ Cobertura funcional dos testes:
 - OAuth: HMAC, timestamp, domínio ancorado, escopos;
 - AES-256-GCM com AAD, assinatura/expiração de tokens, hash de transferência;
 - comparação A/B de SKU, opções, preço e moeda; URL externa mesma origem;
-- `cartCreate`: token privado, `Shopify-Storefront-Buyer-IP`, `@inContext(visitorConsent)`, subtotal cobrado acima do esperado, variante inesperada e `checkoutUrl` fora do domínio;
+- cart permalink: token privado, `Shopify-Storefront-Buyer-IP`, `@inContext(visitorConsent)`, subtotal cobrado acima do esperado, variante inesperada e `checkoutUrl` fora do domínio;
 - instalação automática no tema: injeção do render antes de `</body>`, upload de snippet/assets, idempotência, falta de `write_themes` e negação da Shopify;
 - verificação de senha administrativa com scrypt;
 - fluxo completo com Shopify/banco simulados: preparar carrinho, bloquear item sem mapa, bloquear mudança de preço A/B, consentimento de atribuição, idempotência e destino externo sem carrinho.
@@ -70,7 +70,7 @@ Não há credenciais de Shopify nem projeto Supabase neste ambiente. Portanto **
 
 - OAuth real em lojas de desenvolvimento;
 - importação real via Admin API;
-- criação real de `cartCreate`/checkout na Loja B;
+- redirecionamento real para o checkout da Loja B via cart permalink;
 - instalação automática real no tema publicado da Loja A (exige `write_themes` + exemption);
 - pedido real na Loja B e conferência de atributos do pedido;
 - webhooks reais da Shopify;

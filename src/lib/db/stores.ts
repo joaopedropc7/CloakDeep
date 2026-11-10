@@ -485,10 +485,7 @@ export async function updateStoreConnection(input: {
   if (existing.platform !== "shopify") throw new Error("A loja não é Shopify.");
 
   const sameShop = existing.shop_domain === input.shopDomain;
-  const status: StoreStatus =
-    existing.store_type === "storefront" || Boolean(existing.storefront_token_cipher && sameShop)
-      ? "active"
-      : "pending";
+  const status: StoreStatus = "active";
   if (!sameShop) await flagMappingsForStore(existing.id);
 
   const patch: Record<string, unknown> = {

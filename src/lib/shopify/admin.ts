@@ -62,10 +62,7 @@ async function storeNewTokens(store: StoreRow, result: Awaited<ReturnType<typeof
     refreshTokenExpiresAt: result.refreshTokenExpiresAt,
     scopes: result.scopes.length > 0 ? result.scopes : undefined,
   });
-  await updateStoreStatus(
-    store.id,
-    store.role === "a" || store.storefront_token_cipher ? "active" : "pending",
-  );
+  await updateStoreStatus(store.id, "active");
   return result.accessToken;
 }
 

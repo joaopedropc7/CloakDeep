@@ -100,7 +100,7 @@ Depois do deploy:
 
 ## 6. Limites e observações
 
-- O callback OAuth e o checkout têm `maxDuration = 60` para acomodar a instalação no tema e a Storefront API.
+- O callback OAuth e o checkout têm `maxDuration = 60` para acomodar a instalação no tema e a criação do checkout.
 - A instalação no tema é uma chamada assíncrona (`themeFilesUpsert`); valide a vitrine após alguns segundos.
 - Não há escrita em filesystem no runtime; os assets do tema são gerados em build (`npm run theme:assets`, chamado no `prebuild`).
 - Não configure `NODE_ENV` manualmente na Vercel; ela já define `production`.
@@ -113,7 +113,7 @@ Depois do deploy:
 - [ ] OAuth da Loja A conclui e o token aparece como conectado.
 - [ ] `write_themes` está nos escopos da Loja A.
 - [ ] `theme_installations` mostra `installed` e o layout tem o marcador `CSB_THEME_INSTALL_V1`.
-- [ ] OAuth da Loja B conclui e o token da Storefront API é validado.
+- [ ] OAuth da Loja B conclui e o checkout usa cart permalink.
 - [ ] Catálogos importados e mapeamentos ativos.
 - [ ] Checkout da A é interceptado; itens válidos vão ao checkout da B; item sem mapa bloqueia com explicação.
 - [ ] Webhook de compliance responde 401 com HMAC inválido.

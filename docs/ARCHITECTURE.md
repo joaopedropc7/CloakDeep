@@ -13,10 +13,10 @@ A presença na vitrine da Loja A é feita por **código no tema**, instalado aut
 - A instalação exige `write_themes` e exemption da Shopify; o layout anterior é guardado em backup e há rollback no painel.
 - A Shopify ainda exige consentimento OAuth para `write_themes`; isso não pode ser ocultado.
 
-O checkout da Loja B é criado pela **Storefront API** com `cartCreate` e `checkoutUrl`:
+O checkout da Loja B Shopify é aberto por **cart permalink oficial**:
 
 - <https://shopify.dev/docs/storefronts/headless/building-with-the-storefront-api/cart/manage>
-- <https://shopify.dev/docs/api/storefront/2026-10/mutations/cartCreate>
+- <https://shopify.dev/docs/apps/build/checkout/create-cart-permalinks>
 
 ## Componentes
 
@@ -43,19 +43,19 @@ Somente persistência. Não há Edge Functions, triggers de negócio, RPC de neg
 - Loja B Shopify: `read_products` para importar catálogo e validar preços/estoque no momento da transferência.
 - Não solicitamos dados de clientes, pedidos ou pagamentos. Não há protected customer data.
 
-### Shopify Storefront API
+### Shopify cart permalink
 
-- Token da Loja B (público ou privado; privado recomendado) guardado cifrado.
-- `cartCreate` com linhas mapeadas, atributos de integração e `visitorConsent`.
-- Cada linha leva atributos `csb_source_product`, `csb_source_variant`, `csb_source_sku` e `csb_source_shop`, que aparecem no pedido da B para identificar o item escolhido na A.
-- O servidor confere variante e quantidade de cada linha devolvida e compara o **subtotal antes de descontos** (`cost.subtotalAmount`) com a soma dos preços mapeados; se o valor cobrado for maior que o esperado, aborta antes de redirecionar. Descontos que reduzam o subtotal são aceitos.
-- O `checkoutUrl` retornado é validado contra o domínio da Loja B e redirecionado com HTTP 303.
+- Nenhum token da Storefront API é necessário.
+- O backend monta `https://{loja}/cart/{variant}:{qty},...`, que abre o checkout da Loja B.
+- O servidor valida produto, variante, preço, estoque e moeda via Admin API antes de redirecionar.
+- Cada comprador recebe um checkout novo no domínio da Loja B.
+- UTMs/click IDs só são acrescentados ao permalink com consentimento.
 
 ### Código no tema da Loja A
 
 - `cross-store-bridge.liquid`: snippet global instalado no `layout/theme.liquid`; configura a API e carrega os assets.
 - `cross-store.js` e `cross-store.css`: assets instalados no tema. O JS captura UTMs com consentimento e, na página de carrinho, intercepta o checkout padrão (opção B).
-- A interceptação envia itens/quantidades ao backend; o backend valida tudo e cria o carrinho da B via Storefront API.
+- A interceptação envia itens/quantidades ao backend; o backend valida tudo e abre o checkout da B por cart permalink.
 - Com item sem mapa, a transferência é bloqueada com explicação e o comprador pode continuar no checkout normal da A.
 - O comprador vê o aviso de loja responsável/domínio antes de seguir para a B; não há redirecionamento silencioso.
 - Botões de checkout dinâmico em iframe (Shop Pay/Apple Pay/Google Pay) não são interceptados.
@@ -88,7 +88,7 @@ Pontos importantes:
 - `mappings` guarda o snapshot de preço/moeda usado na ativação (`price_a`, `price_b`, `currency_*`).
 - `transfer_sessions` guarda apenas dados de catálogo e atribuição; nunca PII. O token bruto nunca é persistido: guardamos SHA-256. `claim_token` evita dupla criação concorrente do checkout.
 - `audit_events` não contém PII, tokens ou valores de atribuição.
-- O token de acesso Shopify é cifrado com AES-256-GCM e AAD `store:<domínio>`; o token da Storefront API usa AAD `storefront:<domínio>`.
+- O token de acesso Shopify é cifrado com AES-256-GCM e AAD `store:<domínio>`.
 
 ## Máquina de estados da transferência
 
@@ -101,7 +101,7 @@ prepareTransfer
 POST /checkout (JSON ou form)
   ├─ claim atômico pending → processing
   ├─ revalida mapeamento, preços, estoque e moeda
-  ├─ cartCreate na Loja B
+  ├─ cart permalink na Loja B
   ├─ valida linhas, quantidades, variante e preço unitário devolvidos
   ├─ anexa UTMs ao checkoutUrl somente com consentimento
   ├─ status completed + checkoutUrl
@@ -160,7 +160,7 @@ Referências de consentimento usadas:
 | --- | --- |
 | App standalone + OAuth Authorization Code Grant | É o fluxo recomendado pela Shopify para apps fora do admin. |
 | Instalação automática no tema | Código no tema sem app block/app embed, via `themeFilesUpsert`; requer `write_themes` + exemption, com backup/rollback e fallback manual. |
-| Storefront API `cartCreate` | Mecanismo oficialmente suportado para criar carrinho/checkout em outra loja Shopify. |
+| Cart permalink Shopify | Mecanismo oficial que abre o checkout da Loja B sem depender de token da Storefront API. |
 | Sem PII no banco | Minimização de dados; a Loja B coleta os dados no próprio checkout. |
 | Sem chamadas server-side à URL externa | Evita SSRF e mantém a Loja B como destino de navegação, não de scraping. |
 | Snapshot de preço + revalidação dupla | Impede cobrança divergente e mudanças silenciosas entre a vitrine e o checkout. |

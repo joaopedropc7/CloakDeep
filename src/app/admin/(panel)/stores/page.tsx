@@ -16,7 +16,6 @@ import {
   rollbackThemeAction,
   saveExternalStoreAction,
   saveStoreOAuthCredentialsAction,
-  saveStorefrontTokenAction,
   selectIntegrationAction,
   setIntegrationStatusAction,
   switchStoreBToShopifyAction,
@@ -90,10 +89,7 @@ export default async function StoresPage({
         {params.saved ? <Notice tone="success">{params.saved}</Notice> : null}
         {params.connected ? (
           <Notice tone="success">
-            Loja {params.connected === "a" ? "A" : "B"} conectada.{" "}
-            {params.connected === "b" && storeB?.platform === "shopify" && !storeB.storefront_token_cipher
-              ? "Falta configurar o token da Storefront API abaixo."
-              : ""}
+            Loja {params.connected === "a" ? "Vitrine" : "Checkout"} conectada.
           </Notice>
         ) : null}
       </div>
@@ -442,8 +438,7 @@ export default async function StoresPage({
                 </Notice>
               ) : !storeB.admin_token_cipher ? (
                 <Notice tone="warning">
-                  Loja B ainda não autorizada. Conecte por OAuth antes de configurar a
-                  Storefront API.
+                  Loja B ainda não autorizada. Conecte por OAuth antes de importar o catálogo.
                   <br />
                   <a className="button" href={`/api/auth/shopify/install?store=${storeB.id}`}>
                     Conectar Loja B
@@ -528,60 +523,12 @@ export default async function StoresPage({
               </details>
 
               <hr />
-              <h3>Storefront API</h3>
-              {storeB.storefront_token_cipher ? (
-                <Notice tone="success">
-                  Token {storeB.storefront_token_kind === "private" ? "privado" : "público"} configurado
-                  para a versão {storeB.storefront_api_version}. O valor nunca é exibido.
-                </Notice>
-              ) : (
-                <Notice tone="warning">
-                  O checkout da Loja B exige um token da Storefront API com permissão de
-                  produtos e checkouts. Crie/obtenha o token pela Headless channel.
-                </Notice>
-              )}
-              <details open={!storeB.storefront_token_cipher}>
-                <summary className="small">
-                  {storeB.storefront_token_cipher ? "Substituir token" : "Configurar token"}
-                </summary>
-                <form action={saveStorefrontTokenAction} className="form-grid" style={{ marginTop: "0.75rem" }}>
-                  <div className="full">
-                    <label htmlFor="storefront-token">Token da Storefront API</label>
-                    <input
-                      id="storefront-token"
-                      name="token"
-                      type="password"
-                      autoComplete="off"
-                      required
-                    />
-                    <p className="tiny muted">
-                      Permissões necessárias: produtos e checkouts (leitura e escrita). Recomenda-se
-                      token privado, usado somente no servidor.
-                    </p>
-                  </div>
-                  <div>
-                    <label htmlFor="storefront-kind">Tipo</label>
-                    <select id="storefront-kind" name="kind" defaultValue="private">
-                      <option value="private">Privado (recomendado)</option>
-                      <option value="public">Público</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label htmlFor="storefront-version">Versão da API</label>
-                    <input
-                      id="storefront-version"
-                      name="api_version"
-                      type="text"
-                      defaultValue={storeB.storefront_api_version ?? "2026-10"}
-                      pattern="\d{4}-\d{2}"
-                      required
-                    />
-                  </div>
-                  <div className="full">
-                    <SubmitButton pendingLabel="Validando...">Validar e salvar token</SubmitButton>
-                  </div>
-                </form>
-              </details>
+              <Notice tone="success">
+                <strong>Checkout pronto.</strong> O ShopSync usa cart permalinks oficiais da
+                Shopify para abrir o checkout da Loja B com as variantes e quantidades
+                transferidas.
+              </Notice>
+
               <details>
                 <summary className="small">Reconectar Shopify ou trocar por site externo</summary>
                 <p className="small muted" style={{ marginTop: "0.75rem" }}>

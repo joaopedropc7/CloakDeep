@@ -31,13 +31,12 @@ import {
   appendAttributionToUrl,
   hasAttribution,
   sanitizeAttribution,
-  type Attribution,
 } from "@/lib/domain/attribution";
 import { validateExternalUrl, destinationLabel } from "@/lib/domain/mapping-rules";
 import { amountsEqual, sumAmounts } from "@/lib/money";
 import { isProduction } from "@/lib/env";
 import { fetchLiveVariants, type AdminVariant } from "@/lib/shopify/admin";
-import { createDestinationCart, StorefrontApiError } from "@/lib/shopify/storefront";
+import { buildCartPermalink } from "@/lib/shopify/cart-permalink";
 
 const GID_PATTERN = /^gid:\/\/shopify\/ProductVariant\/\d+$/;
 const TRANSFER_TTL_MS = 30 * 60 * 1000;
@@ -312,12 +311,6 @@ export async function prepareTransfer(input: {
       { code: "EXTERNAL_NO_CART", httpStatus: 409 },
     );
   }
-  if (!storeB.storefront_token_cipher) {
-    throw new TransferError("A Loja B ainda não configurou o checkout.", {
-      code: "DESTINATION_NOT_READY",
-      httpStatus: 503,
-    });
-  }
   if (!storeA.currency || !storeB.currency || storeA.currency !== storeB.currency) {
     throw new TransferError("As lojas precisam usar a mesma moeda.", {
       code: "CURRENCY_MISMATCH",
@@ -548,30 +541,7 @@ export async function completeTransferForBuyer(input: {
     const checked = await revalidateTransfer(claim.transfer, storeA, storeB);
     const attributionConsent =
       input.attributionConsent && hasAttribution(checked.attribution);
-    const attributes = buildCheckoutAttributes({
-      transfer: checked,
-      storeA,
-      storeB,
-      attribution: attributionConsent ? checked.attribution : {},
-    });
-    const cart = await createDestinationCart({
-      store: storeB,
-      lines: checked.lines.map((line) => ({
-        variantId: line.bVariantExternalId!,
-        quantity: line.quantity,
-        expectedUnitPrice: line.unitPriceB,
-        attributes: {
-          csb_source_product: line.aProductTitle,
-          csb_source_variant: line.aVariantTitle ?? "",
-          csb_source_sku: line.aSku ?? "",
-          csb_source_shop: storeA.name,
-        },
-      })),
-      attributes,
-      marketingConsent: attributionConsent,
-      buyerIp: input.buyerIp,
-    });
-    let checkoutUrl = cart.checkoutUrl;
+    let checkoutUrl = buildCartPermalink(storeB, checked.lines);
     if (attributionConsent) {
       checkoutUrl = appendAttributionToUrl(checkoutUrl, checked.attribution);
     }
@@ -581,20 +551,17 @@ export async function completeTransferForBuyer(input: {
       eventType: "checkout_created",
       metadata: {
         transferId: checked.id,
-        currency: cart.currency,
+        currency: storeB.currency,
         lines: checked.lines.length,
         destination: destinationLabel(storeB),
         attributionShared: attributionConsent,
-        warnings: cart.warnings.length,
+        warnings: 0,
+        mode: "cart_permalink",
       },
     });
-    return { checkoutUrl, warnings: cart.warnings };
+    return { checkoutUrl, warnings: [] };
   } catch (error) {
-    const code = error instanceof TransferError
-      ? error.code
-      : error instanceof StorefrontApiError
-        ? error.code
-        : "CHECKOUT_FAILED";
+    const code = error instanceof TransferError ? error.code : "CHECKOUT_FAILED";
     const message = error instanceof Error ? error.message : "Falha ao criar o checkout.";
     await failTransfer(transfer.id, code, message);
     await recordAudit({
@@ -603,15 +570,7 @@ export async function completeTransferForBuyer(input: {
       metadata: { transferId: transfer.id, code },
     });
     if (error instanceof TransferError) throw error;
-    if (error instanceof StorefrontApiError) {
-      throw new TransferError(
-        error.code === "PRICE_CHANGED_DURING_CART_CREATION"
-          ? "O preço mudou ao criar o checkout. A compra foi interrompida por segurança."
-          : "A loja de destino não conseguiu criar o checkout.",
-        { code: error.code, httpStatus: 502, issues: [] },
-      );
-    }
-    throw new TransferError("Não foi possível criar o checkout na Loja B.", {
+    throw new TransferError("Não foi possível montar o checkout na Loja B.", {
       code: "CHECKOUT_FAILED",
       httpStatus: 502,
     });
@@ -758,24 +717,6 @@ async function revalidateTransfer(
   return transfer;
 }
 
-function buildCheckoutAttributes(input: {
-  transfer: TransferRow;
-  storeA: StoreRow;
-  storeB: StoreRow;
-  attribution: Attribution;
-}): Record<string, string> {
-  const attributes: Record<string, string> = {
-    csb_integration: "cross-store-bridge",
-    csb_source_store: input.storeA.name,
-    csb_sale_owner: input.storeB.name,
-    csb_destination_domain: destinationLabel(input.storeB),
-    csb_transfer_id: input.transfer.id,
-  };
-  for (const [key, value] of Object.entries(input.attribution)) {
-    attributes[key] = value;
-  }
-  return attributes;
-}
 
 export type PublicProductMapping =
   | { available: false; reason: "not_mapped" | "needs_review" | "destination_unavailable" | "external_unavailable" }
@@ -844,7 +785,7 @@ export async function resolveProductMapping(input: {
     };
   }
 
-  if (storeB.platform !== "shopify" || !storeB.storefront_token_cipher) {
+  if (storeB.platform !== "shopify") {
     return { available: false, reason: "destination_unavailable" };
   }
   return {
@@ -906,7 +847,6 @@ export async function publicStorefrontConfig(shopDomain: string): Promise<{
   if (!integration || integration.status === "disabled") return { enabled: false };
   const storeB = await getStoreByRoleForIntegration("b", integration.id);
   if (!storeB || storeB.status !== "active") return { enabled: false };
-  if (storeB.platform === "shopify" && !storeB.storefront_token_cipher) return { enabled: false };
   if (storeB.platform === "external" && !storeB.external_base_url) return { enabled: false };
   return {
     enabled: true,

@@ -4,7 +4,7 @@ Integração transparente entre vitrines **Shopify** e destinos **Shopify** ou *
 
 - mapeamento manual de produto/variante entre as lojas;
 - bloqueio de qualquer transferência com item sem correspondência válida;
-- checkout na Loja B via Storefront API (`cartCreate` → `checkoutUrl`) quando ambas são Shopify;
+- checkout na Loja B Shopify via cart permalink oficial;
 - links diretos por produto quando a Loja B é externa (sem carrinho);
 - aviso explícito de saída de domínio e da loja responsável pela venda;
 - atribuição (UTMs/click IDs) somente por allowlist e com consentimento;
@@ -17,10 +17,10 @@ Integração transparente entre vitrines **Shopify** e destinos **Shopify** ou *
 - **Next.js 16 (App Router) + TypeScript** — toda a lógica de negócio.
 - **Supabase PostgreSQL** — apenas persistência, acessada exclusivamente no servidor com `service_role`.
 - **Shopify Admin API 2026-10** — OAuth, lojas, produtos e variantes.
-- **Shopify Storefront API 2026-10** — criação do carrinho e checkout da Loja B.
+- **Shopify cart permalink** — abertura do checkout da Loja B com variantes e quantidades validadas, sem token da Storefront API.
 - **Lojas independentes + pares Vitrine↔Checkout** — cada loja tem tipo, nome e credenciais próprias; uma vitrine pode ter vários pares, mas só um ativo; um checkout pode atender várias vitrines.
 - **`write_themes` + instalação automática no tema** — o snippet é inserido no layout da Loja A via Admin API (`themeFilesUpsert`); sem app block/app embed. Requer exemption da Shopify.
-- **Vitest** — 35 testes de unidade e de fluxo com Shopify/banco simulados.
+- **Vitest** — 38 testes de unidade e de fluxo com Shopify/banco simulados.
 - **Operação administrativa** — integrações com renomear/desativar/excluir, edição de loja, teste de conexão, escopos por loja, auto-mapeamento por SKU, fila de revisão e transferências filtradas com detalhe.
 - **Catálogo agendado** — cron diário sincroniza uma loja por execução, além da importação manual.
 
@@ -37,7 +37,7 @@ Comprador na Loja A (Shopify)
                                         ├─ cria sessão opaca (token com hash)
                                         └─ POST /checkout (JSON, mesma origem)
                                                 ├─ revalida tudo
-                                                ├─ Storefront API cartCreate na B
+                                                ├─ cart permalink na B
                                                 └─ devolve checkoutUrl
                                                         │
                                                         ▼
@@ -93,7 +93,7 @@ A Loja A é conectada por OAuth com `read_products,write_themes`. Ao conectar a 
 
 A instalação automática exige que a Shopify conceda `write_themes` e a **exemption para alterar arquivos de tema**. A Shopify ainda exige que o lojista aprove o escopo no OAuth; isso não pode ser ocultado nem contornado. Se a Shopify negar, o painel mantém o tema intacto e oferece o fallback manual em [`theme-code/`](theme-code).
 
-O snippet intercepta o checkout padrão do carrinho da A. Se todos os itens tiverem mapeamento válido, o backend cria o carrinho/checkout da B via Storefront API e o navegador é redirecionado diretamente ao `checkoutUrl` da B. Se houver item sem mapa, a transferência é bloqueada com explicação, e o comprador pode continuar no checkout normal da A. O aviso de checkout/loja responsável aparece acima do botão de checkout da A; não há redirecionamento silencioso.
+O snippet intercepta o checkout padrão do carrinho da A. Se todos os itens tiverem mapeamento válido, o backend cria a transferência e o navegador é redirecionado ao checkout da B via cart permalink oficial. Se houver item sem mapa, a transferência é bloqueada com explicação, e o comprador pode continuar no checkout normal da A. O aviso de checkout/loja responsável aparece acima do botão de checkout da A; não há redirecionamento silencioso.
 
 ## Fluxos
 
@@ -101,10 +101,10 @@ O snippet intercepta o checkout padrão do carrinho da A. Se todos os itens tive
 
 1. Conecte A e B por OAuth Authorization Code Grant (`read_products`; a A também precisa de `write_themes`).
 2. Importe produtos/variantes das duas lojas.
-3. Configure na Loja B um token da Storefront API (recomendado: privado) com permissões de produtos e checkouts.
+3. Não é necessário configurar token da Storefront API; o checkout usa cart permalink oficial da Shopify.
 4. Ative os mapeamentos conferindo produto, variante, SKU, opções, preço e moeda.
 5. No carrinho da Loja A, o snippet global intercepta o checkout, envia itens/quantidades para a API e, se tudo estiver válido, redireciona diretamente ao checkout da B.
-6. A API valida tudo novamente e cria o checkout na B com `cartCreate`; o comprador é levado ao `checkoutUrl` da B.
+6. A API valida tudo novamente e abre o checkout da B por cart permalink.
 
 ### Loja B externa
 
@@ -145,7 +145,7 @@ Detalhes em [docs/SECURITY.md](docs/SECURITY.md).
 src/app/                  rotas Next.js, painel, páginas públicas e APIs
 src/lib/auth.ts           sessão administrativa, scrypt, cookies assinados
 src/lib/crypto.ts         AES-256-GCM, HMAC, tokens opacos
-src/lib/shopify/          OAuth, Admin API, Storefront API
+src/lib/shopify/          OAuth, Admin API e cart permalink
 src/lib/domain/           regras de mapeamento e atribuição (puras/testáveis)
 src/lib/services/         orquestração: OAuth, catálogo, mapeamentos, transferência
 src/lib/db/               repositórios Supabase
@@ -165,7 +165,7 @@ O projeto está preparado para a Vercel (`vercel.json`, build `npm run build`, r
 - Exige a mesma moeda entre A e B (moeda de loja, não presentment currency de Markets); preços são comparados com o snapshot do mapeamento. Alterações bloqueiam a transferência até revisão manual.
 - A transferência cobre variantes padrão. Selling plans/assinaturas, bundles, gift cards, descontos do carrinho da A e sessão de cliente da A não são transportados; o checkout da B aplica as próprias regras de frete, impostos, descontos e pagamento.
 - O checkout é o checkout web da Shopify da Loja B; a Loja A não cria pedido nem processa o pagamento.
-- A Storefront API da B é um pré-requisito operacional (token da Headless channel). O projeto não cria o token automaticamente.
+- O checkout da B Shopify usa cart permalink oficial; nenhum token da Storefront API é solicitado ou usado. O projeto não cria tokens automaticamente.
 - O OAuth com `write_themes` exige aprovação do lojista na tela de consentimento da Shopify; não é possível conceder o escopo silenciosamente.
 - Botões de checkout dinâmico (Shop Pay/Apple Pay/Google Pay em iframe) não são interceptados pelo tema; o checkout padrão do carrinho é.
 - A instalação automática altera o tema publicado e exige `write_themes` + exemption da Shopify. Se a Shopify negar, o tema não é alterado e o fallback manual fica disponível.

@@ -23,13 +23,11 @@ export default async function DashboardPage() {
     storeB?.platform === "shopify" ? catalogStats(storeB.id) : Promise.resolve({ products: 0, variants: 0 }),
   ]);
 
-  const storeBReady =
-    Boolean(storeB && storeB.status === "active") &&
-    (storeB?.platform === "external" || Boolean(storeB?.storefront_token_cipher));
+  const storeBReady = Boolean(storeB && storeB.status === "active");
   const checklist = [
     { done: Boolean(storeA && storeA.status === "active"), label: "Loja A (Shopify) conectada por OAuth" },
     { done: Boolean(storeB && storeB.status === "active"), label: "Loja B configurada" },
-    { done: storeBReady, label: "Destino pronto (Storefront API ou site externo)" },
+    { done: storeBReady, label: "Destino pronto para checkout" },
     { done: catalogA.products > 0, label: "Catálogo da Loja A importado" },
     {
       done: storeB?.platform === "external" || catalogB.products > 0,
