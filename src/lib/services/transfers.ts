@@ -729,6 +729,7 @@ export type PublicProductMapping =
       currency: string;
       disclosure: string;
       linkPath?: string;
+      externalUrl?: string;
     };
 
 export async function resolveProductMapping(input: {
@@ -782,6 +783,7 @@ export async function resolveProductMapping(input: {
       currency: mapping.currency_b,
       disclosure: `Você será levado ao site da ${storeB.name} (${destinationLabel(storeB)}), responsável pela venda.`,
       linkPath: `/go/${linkToken}`,
+      externalUrl: mapping.external_product_url,
     };
   }
 

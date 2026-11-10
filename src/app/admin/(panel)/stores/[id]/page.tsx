@@ -15,6 +15,8 @@ import {
 } from "@/app/admin/actions";
 import { SubmitButton } from "@/components/submit-button";
 import { Notice, StatusBadge } from "@/components/ui";
+import { CopyButton } from "@/components/copy-button";
+import { buildExternalCheckoutScript } from "@/lib/external-checkout-script";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +33,9 @@ export default async function StoreDetailPage({
   const store = await getStoreById(id);
   if (!store) notFound();
 
+  const externalScript = store.platform === "external" ? buildExternalCheckoutScript(store.name) : null;
+  const externalButtonHtml = `<a href="/checkout" class="shopsync-checkout" data-shopsync-checkout>\n  Finalizar compra\n</a>`;
+  const externalButtonCss = `.shopsync-checkout {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  min-height: 48px;\n  padding: 0.8rem 1.4rem;\n  border-radius: 0.5rem;\n  background: #111827;\n  color: #ffffff;\n  font: inherit;\n  font-weight: 700;\n  text-decoration: none;\n}\n\n.shopsync-checkout:hover {\n  background: #1f2937;\n  color: #ffffff;\n}`;
   const [stats, lastSync, themeInstall] = await Promise.all([
     catalogStats(store.id),
     store.platform === "shopify" ? getLatestSyncRun(store.id) : Promise.resolve(null),
@@ -163,6 +168,79 @@ export default async function StoreDetailPage({
               <SubmitButton className="secondary" pendingLabel="Salvando...">Salvar credenciais</SubmitButton>
             </div>
           </form>
+        </section>
+      ) : null}
+
+      {externalScript ? (
+        <section className="panel">
+          <div className="panel-header">
+            <div>
+              <h2>Script da loja externa</h2>
+              <p className="muted small" style={{ margin: 0 }}>
+                Cole o bloco abaixo antes de <code>&lt;/head&gt;</code> em todas as páginas da
+                loja externa. Ele só age quando a URL chega com o marcador do ShopSync.
+              </p>
+            </div>
+            <CopyButton value={externalScript} />
+          </div>
+          <pre className="code-block">{externalScript}</pre>
+          <details open style={{ marginTop: "1rem" }}>
+            <summary className="button button-secondary">Ver instruções de instalação na loja externa</summary>
+            <div className="stack" style={{ marginTop: "0.9rem" }}>
+              <div>
+                <h3>1. Script no head</h3>
+                <p className="small muted">
+                  Cole o script acima antes de <code>&lt;/head&gt;</code> em <strong>todas as
+                  páginas</strong> da loja externa: produto, carrinho, checkout e páginas de
+                  campanha.
+                </p>
+              </div>
+
+              <div>
+                <h3>2. Botão/link de checkout no produto</h3>
+                <p className="small muted">
+                  Na página de produto, o link ou botão final de checkout deve ter o atributo
+                  <code> data-shopsync-checkout</code>. Exemplo em HTML vanilla:
+                </p>
+                <div className="row">
+                  <CopyButton value={externalButtonHtml} label="Copiar HTML" />
+                </div>
+                <pre className="code-block">{externalButtonHtml}</pre>
+                <p className="tiny muted">
+                  O atributo é a forma mais confiável. Sem ele, o script tenta links contendo
+                  <code> /checkout</code> e botões com o texto “Finalizar compra”.
+                </p>
+              </div>
+
+              <div>
+                <h3>3. CSS opcional</h3>
+                <p className="small muted">
+                  Se a loja externa já tem um botão próprio, não precisa deste CSS. Se quiser um
+                  botão padrão do ShopSync:
+                </p>
+                <div className="row">
+                  <CopyButton value={externalButtonCss} label="Copiar CSS" />
+                </div>
+                <pre className="code-block">{externalButtonCss}</pre>
+              </div>
+
+              <div>
+                <h3>4. Como testar</h3>
+                <ol className="small muted" style={{ margin: 0, paddingLeft: "1.2rem" }}>
+                  <li>Cadastre a URL completa do produto no mapeamento da vitrine.</li>
+                  <li>Abra a página de produto da vitrine e clique no botão de compra.</li>
+                  <li>Confirme que a URL da loja externa chega com <code>?shopsync_checkout=1</code>.</li>
+                  <li>O script deve clicar no botão marcado e abrir o checkout da loja externa.</li>
+                  <li>Se não encontrar o botão, o aviso de fallback aparece no rodapé da página.</li>
+                </ol>
+              </div>
+
+              <Notice tone="info">
+                O comprador chega primeiro à página do produto externo; o script então aciona o
+                checkout daquela página. Não há redirecionamento silencioso.
+              </Notice>
+            </div>
+          </details>
         </section>
       ) : null}
 

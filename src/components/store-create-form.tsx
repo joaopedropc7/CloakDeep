@@ -84,7 +84,18 @@ export function StoreCreateForm({
           </div>
           <div>
             <label htmlFor="store-scopes">Escopos</label>
-            <input id="store-scopes" name="scopes" type="text" defaultValue="read_products,write_themes" />
+            <input
+              key={isStorefront ? "storefront-scopes" : "checkout-scopes"}
+              id="store-scopes"
+              name="scopes"
+              type="text"
+              defaultValue={isStorefront ? "read_products,write_themes" : "read_products"}
+            />
+            <p className="tiny muted">
+              {isStorefront
+                ? "A Vitrine precisa de write_themes para instalar o snippet no tema."
+                : "O Checkout só precisa ler o catálogo; nenhum código é instalado no tema dele."}
+            </p>
           </div>
         </>
       ) : (

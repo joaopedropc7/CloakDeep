@@ -201,7 +201,7 @@ export async function createStore(input: CreateStoreInput): Promise<StoreRow> {
     shopify_client_id: isExternal ? null : input.clientId?.trim() || null,
     shopify_client_secret_cipher:
       !isExternal && input.clientSecret ? encryptStoreClientSecret(id, input.clientSecret) : null,
-    shopify_scopes: input.scopes?.trim() || "read_products,write_themes",
+    shopify_scopes: input.scopes?.trim() || (input.storeType === "storefront" ? "read_products,write_themes" : "read_products"),
   };
   const { data, error } = await getDb().from("stores").insert(row).select("*").single();
   if (error) throw new Error(`Falha ao criar loja: ${error.message}`);
@@ -418,7 +418,7 @@ export async function switchStoreBToShopify(input: {
       status: "pending",
       shopify_client_id: input.clientId.trim(),
       shopify_client_secret_cipher: cipher,
-      shopify_scopes: input.scopes?.trim() || "read_products,write_themes",
+      shopify_scopes: input.scopes?.trim() || "read_products",
       admin_token_cipher: null,
       refresh_token_cipher: null,
       token_expires_at: null,

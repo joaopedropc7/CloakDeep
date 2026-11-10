@@ -18,6 +18,7 @@ import {
 } from "@/lib/domain/mapping-rules";
 import { normalizeAmount } from "@/lib/money";
 import { isProduction } from "@/lib/env";
+import { installThemeIntegration } from "@/lib/services/theme-install";
 
 function requireAcknowledgements(identityAck: boolean, priceAck: boolean, diff: string): void {
   if (!identityAck) {
@@ -207,6 +208,15 @@ export async function activateExternalMapping(input: {
       destination: destinationLabel(storeB),
     },
   });
+
+  // O mapeamento externo depende do script de produto no tema da vitrine.
+  // Atualiza o tema automaticamente para não exigir uma ação manual extra.
+  try {
+    await installThemeIntegration(storeA);
+  } catch {
+    // O mapeamento continua ativo; o status do tema fica registrado para o painel.
+  }
+
   return mapping;
 }
 

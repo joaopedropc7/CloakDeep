@@ -455,12 +455,116 @@
     });
   }
 
+
+  function withCheckoutMarker(url) {
+    try {
+      var next = new URL(url, window.location.href);
+      next.searchParams.set("shopsync_checkout", "1");
+      return next.toString();
+    } catch (error) {
+      return url + (url.indexOf("?") === -1 ? "?" : "&") + "shopsync_checkout=1";
+    }
+  }
+
+  function numericVariantId(form) {
+    var input = form.querySelector('input[name="id"], select[name="id"]');
+    var value = input ? String(input.value || "").trim() : "";
+    return /^\d+$/.test(value) ? value : "";
+  }
+
+  async function prepareExternalProductForm(cfg, form) {
+    if (form.getAttribute("data-csb-external-prepared") === "1") return;
+    var numeric = numericVariantId(form);
+    if (!numeric) return;
+    form.setAttribute("data-csb-external-prepared", "1");
+    var variantId = "gid://shopify/ProductVariant/" + numeric;
+    try {
+      var response = await fetch(
+        cfg.apiBase +
+          "/api/public/product?shop=" +
+          encodeURIComponent(cfg.shop) +
+          "&variant=" +
+          encodeURIComponent(variantId),
+        { credentials: "omit", headers: { Accept: "application/json" } },
+      );
+      if (!response.ok) return;
+      var mapping = await response.json();
+      if (!mapping || !mapping.available || mapping.mode !== "external" || !mapping.externalUrl) {
+        return;
+      }
+      form.setAttribute("data-csb-external-url", mapping.externalUrl);
+      if (form.getAttribute("data-csb-external-bound") !== "1") {
+        form.setAttribute("data-csb-external-bound", "1");
+        form.addEventListener(
+          "submit",
+          function (event) {
+            if (event.__csbBypass) return;
+            var target = form.getAttribute("data-csb-external-url");
+            if (!target) return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            window.location.assign(withCheckoutMarker(target));
+          },
+          true,
+        );
+      }
+      var noteId = "csb-external-product-note";
+      if (!document.getElementById(noteId) && form.parentNode) {
+        var note = element("p", "csb-external-product-note");
+        note.id = noteId;
+        note.textContent =
+          "Compra concluída em " +
+          (mapping.destination && mapping.destination.name ? mapping.destination.name : "outra loja") +
+          ". Você será levado ao mesmo produto na loja responsável pela venda.";
+        form.parentNode.insertBefore(note, form);
+      }
+    } catch (error) {
+      /* mantém o carrinho normal da vitrine */
+    }
+  }
+
+  function initExternalProduct(cfg) {
+    function scan() {
+      document.querySelectorAll('form[action*="/cart/add"]').forEach(function (form) {
+        void prepareExternalProductForm(cfg, form);
+      });
+    }
+    scan();
+    document.addEventListener(
+      "change",
+      function (event) {
+        var target = event.target;
+        if (!target || !target.matches || !target.matches('input[name="id"], select[name="id"]')) return;
+        var form = target.closest("form");
+        if (!form) return;
+        form.removeAttribute("data-csb-external-prepared");
+        form.removeAttribute("data-csb-external-url");
+        void prepareExternalProductForm(cfg, form);
+      },
+      true,
+    );
+    var scheduled = false;
+    var observer = new MutationObserver(function () {
+      if (scheduled) return;
+      scheduled = true;
+      window.setTimeout(function () {
+        scheduled = false;
+        scan();
+      }, 200);
+    });
+    observer.observe(document.documentElement, { childList: true, subtree: true });
+  }
   async function init() {
     var cfg = config();
     if (!cfg || !cfg.shop) return;
 
     // Captura UTMs em qualquer página onde o snippet global for renderizado.
     void currentAttribution();
+
+    if (cfg.template === "product") {
+      initExternalProduct(cfg);
+      return;
+    }
 
     if (cfg.template !== "cart") return;
 

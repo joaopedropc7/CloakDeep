@@ -349,7 +349,7 @@ export async function createStoreAction(formData: FormData): Promise<void> {
       if (!/^[A-Z]{3}$/.test(currency)) throw new Error("Moeda inválida.");
       externalOrigin = url.origin;
     }
-    await createStore({
+    const created = await createStore({
       name,
       storeType,
       platform,
@@ -361,7 +361,7 @@ export async function createStoreAction(formData: FormData): Promise<void> {
       scopes: platform === "shopify" ? scopes : null,
     });
     revalidatePath("/admin/stores");
-    redirectWithMessage("/admin/stores", "saved", "Loja cadastrada.");
+    redirectWithMessage(`/admin/stores/${created.id}`, "saved", "Loja cadastrada.");
   } catch (error) {
     if (isRedirectError(error)) throw error;
     redirectWithMessage("/admin/stores", "error", error instanceof Error ? error.message : "Falha.");
