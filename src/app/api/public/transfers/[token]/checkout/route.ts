@@ -1,6 +1,14 @@
 import { NextResponse } from "next/server";
 import { appUrl } from "@/lib/env";
-import { formValue, isRateLimited, readJsonBody } from "@/lib/http";
+import { sha256Hex } from "@/lib/crypto";
+import {
+  checkoutCorsHeaders,
+  formValue,
+  isRateLimited,
+  readJsonBody,
+} from "@/lib/http";
+import { getStoreById } from "@/lib/db/stores";
+import { getTransferByTokenHash } from "@/lib/db/transfers";
 import { completeTransferForBuyer, TransferError } from "@/lib/services/transfers";
 
 export const runtime = "nodejs";
@@ -11,18 +19,57 @@ function redirectTo(path: string): NextResponse {
   return NextResponse.redirect(new URL(path, appUrl()), 303);
 }
 
-function sameOriginOnly(request: Request): boolean {
-  const origin = request.headers.get("origin");
-  if (!origin) return true;
-  try {
-    return new URL(origin).origin === new URL(appUrl()).origin;
-  } catch {
-    return false;
-  }
+function jsonWithCors(body: unknown, status: number, origin: string | null): NextResponse {
+  return NextResponse.json(body, { status, headers: checkoutCorsHeaders(origin) });
 }
 
 function wantsJson(request: Request): boolean {
   return (request.headers.get("accept") || "").toLowerCase().includes("application/json");
+}
+
+async function resolveOrigin(
+  request: Request,
+  token: string,
+): Promise<{ allowed: boolean; origin: string | null }> {
+  const origin = request.headers.get("origin");
+  if (!origin) return { allowed: true, origin: null };
+  try {
+    if (new URL(origin).origin === new URL(appUrl()).origin) {
+      return { allowed: true, origin };
+    }
+  } catch {
+    return { allowed: false, origin: null };
+  }
+
+  const transfer = await getTransferByTokenHash(sha256Hex(token));
+  if (!transfer) return { allowed: false, origin: null };
+  const storeA = await getStoreById(transfer.store_a_id);
+  if (!storeA) return { allowed: false, origin: null };
+
+  const allowed = new Set<string>();
+  for (const value of [storeA.shop_domain, storeA.primary_domain]) {
+    if (!value) continue;
+    allowed.add(`https://${value.replace(/^https?:\/\//, "").replace(/\/$/, "")}`);
+  }
+  return allowed.has(origin) ? { allowed: true, origin } : { allowed: false, origin: null };
+}
+
+export async function OPTIONS(
+  request: Request,
+  context: { params: Promise<{ token: string }> },
+) {
+  const { token } = await context.params;
+  if (!/^[A-Za-z0-9_-]{20,200}$/.test(token)) {
+    return new NextResponse(null, { status: 403, headers: checkoutCorsHeaders(null) });
+  }
+  const auth = await resolveOrigin(request, token);
+  if (!auth.allowed) {
+    return new NextResponse(null, { status: 403, headers: checkoutCorsHeaders(null) });
+  }
+  return new NextResponse(null, {
+    status: 204,
+    headers: checkoutCorsHeaders(auth.origin),
+  });
 }
 
 export async function POST(
@@ -31,22 +78,41 @@ export async function POST(
 ) {
   const { token } = await context.params;
   const json = wantsJson(request);
+
   if (!/^[A-Za-z0-9_-]{20,200}$/.test(token)) {
+    const requestOrigin = request.headers.get("origin");
+    let safeOrigin: string | null = null;
+    try {
+      if (requestOrigin && new URL(requestOrigin).origin === new URL(appUrl()).origin) {
+        safeOrigin = requestOrigin;
+      }
+    } catch {
+      safeOrigin = null;
+    }
     return json
-      ? NextResponse.json(
+      ? jsonWithCors(
           { error: { code: "INVALID_TOKEN", message: "Token inválido." } },
-          { status: 400, headers: { "Cache-Control": "no-store" } },
+          400,
+          safeOrigin,
         )
       : redirectTo("/transfer/invalid");
   }
-  if (!sameOriginOnly(request)) {
-    return new NextResponse("Origem não autorizada.", { status: 403 });
+
+  const auth = await resolveOrigin(request, token);
+  if (!auth.allowed) {
+    return jsonWithCors(
+      { error: { code: "ORIGIN_NOT_ALLOWED", message: "Origem não autorizada." } },
+      403,
+      auth.origin,
+    );
   }
+
   if (isRateLimited(request, `checkout:${token.slice(0, 16)}`, 8, 60_000)) {
     return json
-      ? NextResponse.json(
+      ? jsonWithCors(
           { error: { code: "RATE_LIMITED", message: "Muitas tentativas. Aguarde." } },
-          { status: 429, headers: { "Cache-Control": "no-store" } },
+          429,
+          auth.origin,
         )
       : redirectTo(`/transfer/${token}?error=RATE_LIMITED`);
   }
@@ -63,11 +129,12 @@ export async function POST(
       const formData = await request.formData();
       attributionConsent = formValue(formData, "attribution_consent") === "on";
     }
-  } catch (error) {
+  } catch {
     return json
-      ? NextResponse.json(
+      ? jsonWithCors(
           { error: { code: "INVALID_BODY", message: "Requisição inválida." } },
-          { status: 400, headers: { "Cache-Control": "no-store" } },
+          400,
+          auth.origin,
         )
       : redirectTo(`/transfer/${token}?error=INVALID_BODY`);
   }
@@ -79,10 +146,7 @@ export async function POST(
       buyerIp: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null,
     });
     if (json) {
-      return NextResponse.json(
-        { checkoutUrl: result.checkoutUrl },
-        { headers: { "Cache-Control": "no-store" } },
-      );
+      return jsonWithCors({ checkoutUrl: result.checkoutUrl }, 200, auth.origin);
     }
     const response = NextResponse.redirect(result.checkoutUrl, 303);
     response.headers.set("Cache-Control", "no-store");
@@ -91,7 +155,7 @@ export async function POST(
   } catch (error) {
     if (error instanceof TransferError) {
       return json
-        ? NextResponse.json(
+        ? jsonWithCors(
             {
               error: {
                 code: error.code,
@@ -99,15 +163,17 @@ export async function POST(
                 issues: error.issues,
               },
             },
-            { status: error.httpStatus, headers: { "Cache-Control": "no-store" } },
+            error.httpStatus,
+            auth.origin,
           )
         : redirectTo(`/transfer/${token}?error=${encodeURIComponent(error.code)}`);
     }
     console.error("[public/checkout] unexpected error", error);
     return json
-      ? NextResponse.json(
+      ? jsonWithCors(
           { error: { code: "CHECKOUT_FAILED", message: "Não foi possível criar o checkout." } },
-          { status: 502, headers: { "Cache-Control": "no-store" } },
+          502,
+          auth.origin,
         )
       : redirectTo(`/transfer/${token}?error=CHECKOUT_FAILED`);
   }

@@ -67,6 +67,21 @@ export function preflight(origin: string): NextResponse {
   });
 }
 
+
+export function checkoutCorsHeaders(origin: string | null): HeadersInit {
+  const headers: Record<string, string> = {
+    Vary: "Origin",
+    "Cache-Control": "no-store",
+  };
+  if (origin) {
+    headers["Access-Control-Allow-Origin"] = origin;
+    headers["Access-Control-Allow-Methods"] = "POST, OPTIONS";
+    headers["Access-Control-Allow-Headers"] = "Content-Type";
+    headers["Access-Control-Max-Age"] = "600";
+  }
+  return headers;
+}
+
 export function allowedStoreOrigins(store: StoreRow): Set<string> {
   const origins = new Set<string>();
   for (const value of [store.shop_domain, store.primary_domain]) {
