@@ -273,15 +273,30 @@
     }
   }
 
+  function textOf(node) {
+    return String(node && (node.innerText || node.value || node.getAttribute("aria-label") || ""))
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+  }
+
   function isCheckoutControl(node) {
     if (!node || !node.matches) return false;
+    if (node.closest(".csb-checkout-notice")) return false;
     if (node.matches('button[name="checkout"], input[name="checkout"], input[type="submit"][name="checkout"]')) {
       return true;
+    }
+    if (node.matches('button, input[type="submit"]')) {
+      var text = textOf(node);
+      if (text && text.length <= 80 && text.indexOf("checkout") !== -1) return true;
     }
     if (node.matches("a[href]")) {
       try {
         var url = new URL(node.href, window.location.origin);
-        return url.origin === window.location.origin && url.pathname === "/checkout";
+        if (url.origin !== window.location.origin) return false;
+        if (url.pathname === "/checkout") return true;
+        var linkText = textOf(node);
+        return linkText.length <= 80 && linkText.indexOf("checkout") !== -1;
       } catch (error) {
         return false;
       }
@@ -292,7 +307,7 @@
   function checkoutControls() {
     var controls = [];
     document
-      .querySelectorAll('button[name="checkout"], input[name="checkout"], input[type="submit"][name="checkout"], a[href]')
+      .querySelectorAll('button, input[type="submit"], input[name="checkout"], a[href]')
       .forEach(function (node) {
         if (isCheckoutControl(node)) controls.push(node);
       });
@@ -400,6 +415,26 @@
     );
   }
 
+  function bindDocumentClicks(ui) {
+    if (document.documentElement.getAttribute("data-csb-document-bound") === "1") return;
+    document.documentElement.setAttribute("data-csb-document-bound", "1");
+    document.addEventListener(
+      "click",
+      function (event) {
+        if (event.__csbBypass) return;
+        var target = event.target;
+        if (!target || !target.closest) return;
+        if (target.closest(".csb-checkout-notice")) return;
+        var control = target.closest('button, input[type="submit"], input[name="checkout"], a[href]');
+        if (!control || !isCheckoutControl(control)) return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        void runTransfer(ui);
+      },
+      true,
+    );
+  }
+
   function bindCartForms(ui) {
     document.querySelectorAll('form[action*="/cart"]').forEach(function (form) {
       if (form.getAttribute("data-csb-form-bound") === "1") return;
@@ -439,13 +474,13 @@
     if (items.length === 0) return;
 
     var controls = checkoutControls();
-    if (controls.length === 0) return;
-
-    var ui = buildUi(controls[0], publicConfig, cfg);
+    var anchor = controls[0] || document.querySelector('form[action*="/cart"]') || document.body;
+    var ui = buildUi(anchor, publicConfig, cfg);
     controls.forEach(function (control) {
       bindControl(control, ui);
     });
     bindCartForms(ui);
+    bindDocumentClicks(ui);
   }
 
   function start() {

@@ -616,6 +616,11 @@ export async function getNextStoreForSync(): Promise<StoreRow | null> {
   return data ? normalizeStore(data) : null;
 }
 
+export async function deleteStore(storeId: string): Promise<void> {
+  const { error } = await getDb().from("stores").delete().eq("id", storeId);
+  if (error) throw new Error(`Falha ao excluir loja: ${error.message}`);
+}
+
 /** Erases all data for a shop (GDPR shop/redact). Cascades remove variants, mappings and transfers. */
 export async function deleteStoreDataByShopDomain(shopDomain: string): Promise<void> {
   const { error } = await getDb().from("stores").delete().eq("shop_domain", shopDomain);

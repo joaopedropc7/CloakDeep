@@ -35,7 +35,7 @@ Para cada loja (A e B de cada integração):
    read_products,write_themes
    ```
 4. Copie o **Client ID** e o **Client Secret** daquele app.
-5. No painel, em **Lojas e instalação**, crie a integração e informe as credenciais da Loja A e da Loja B (quando Shopify).
+5. No painel, em **Lojas**, cadastre cada loja e informe as credenciais Shopify.
 
 O app é standalone: o painel é o Next.js; não é um app embutido no admin. O mesmo redirect URI serve para todas as lojas; cada loja tem seu próprio par de credenciais.
 
@@ -63,7 +63,7 @@ A contrapartida é que a instalação automática altera o tema publicado; por i
 ## 2. Supabase
 
 1. Crie o projeto.
-2. Rode [`0001_init.sql`](../supabase/migrations/0001_init.sql), [`0002_theme_installations.sql`](../supabase/migrations/0002_theme_installations.sql), [`0003_integrations.sql`](../supabase/migrations/0003_integrations.sql), [`0004_store_oauth_credentials.sql`](../supabase/migrations/0004_store_oauth_credentials.sql), [`0005_admin_settings.sql`](../supabase/migrations/0005_admin_settings.sql), [`0006_store_admin_extras.sql`](../supabase/migrations/0006_store_admin_extras.sql) e [`0007_store_pairs.sql`](../supabase/migrations/0007_store_pairs.sql) e [`0008_store_pairs_repair.sql`](../supabase/migrations/0008_store_pairs_repair.sql) no SQL Editor.
+2. Rode [`0001_init.sql`](../supabase/migrations/0001_init.sql), [`0002_theme_installations.sql`](../supabase/migrations/0002_theme_installations.sql), [`0003_integrations.sql`](../supabase/migrations/0003_integrations.sql), [`0004_store_oauth_credentials.sql`](../supabase/migrations/0004_store_oauth_credentials.sql), [`0005_admin_settings.sql`](../supabase/migrations/0005_admin_settings.sql), [`0006_store_admin_extras.sql`](../supabase/migrations/0006_store_admin_extras.sql) e [`0007_store_pairs.sql`](../supabase/migrations/0007_store_pairs.sql) e [`0008_store_pairs_repair.sql`](../supabase/migrations/0008_store_pairs_repair.sql) e [`0009_activate_connected_stores.sql`](../supabase/migrations/0009_activate_connected_stores.sql) no SQL Editor.
 3. Copie `Project URL` e `service_role key` para `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY`.
 
 Não crie policies públicas. O Next.js acessa com `service_role` apenas no servidor. Não há Edge Functions.
@@ -74,7 +74,7 @@ Você pode manter várias lojas e vários pares. Cada loja tem um tipo: **Vitrin
 
 1. Suba o app (`npm run dev` ou deploy).
 2. Entre em `/admin` com a senha.
-3. Em **Lojas e instalação → Lojas cadastradas**, crie a loja **Vitrine** com nome único, domínio Shopify, Client ID/Secret e escopos.
+3. Em **Lojas → Nova loja**, crie a loja **Vitrine** com nome único, domínio Shopify, Client ID/Secret e escopos.
 4. Crie a loja **Checkout** (Shopify com Client ID/Secret ou site externo com URL/moeda).
 5. Conecte cada loja Shopify por OAuth na lista de lojas.
 6. Em **Pares Vitrine ↔ Checkout**, crie o par escolhendo a vitrine e o checkout. Marque **Ativar este par agora** se as duas lojas já estiverem prontas.
@@ -183,7 +183,7 @@ Botões de checkout dinâmico (Shop Pay/Apple Pay/Google Pay) renderizados pela 
 
 ## 8. Loja B externa (sem carrinho)
 
-Em **Lojas e instalação → Loja B externa**, informe:
+No detalhe da loja Checkout externa, informe:
 
 - nome exibido ao comprador;
 - origem HTTPS, ex.: `https://loja-b.com` (sem caminho/query);

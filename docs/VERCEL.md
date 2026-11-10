@@ -57,6 +57,7 @@ Aplique no Supabase, nesta ordem:
 6. [`0006_store_admin_extras.sql`](../supabase/migrations/0006_store_admin_extras.sql)
 7. [`0007_store_pairs.sql`](../supabase/migrations/0007_store_pairs.sql)
 8. [`0008_store_pairs_repair.sql`](../supabase/migrations/0008_store_pairs_repair.sql)
+9. [`0009_activate_connected_stores.sql`](../supabase/migrations/0009_activate_connected_stores.sql)
 
 Não há Edge Functions. O Next.js acessa o PostgreSQL com a `service_role` apenas no servidor.
 

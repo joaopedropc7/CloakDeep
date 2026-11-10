@@ -82,7 +82,7 @@ Esses passos estão no roteiro abaixo e precisam ser executados com as credencia
 
 ### Preparação
 
-1. Aplicar as migrations `0001_init.sql`, `0002_theme_installations.sql`, `0003_integrations.sql`, `0004_store_oauth_credentials.sql`, `0005_admin_settings.sql`, `0006_store_admin_extras.sql`, `0007_store_pairs.sql` e `0008_store_pairs_repair.sql` no Supabase.
+1. Aplicar as migrations `0001_init.sql`, `0002_theme_installations.sql`, `0003_integrations.sql`, `0004_store_oauth_credentials.sql`, `0005_admin_settings.sql`, `0006_store_admin_extras.sql`, `0007_store_pairs.sql` e `0008_store_pairs_repair.sql` e `0009_activate_connected_stores.sql` no Supabase.
 2. Criar o app Shopify, configurar `APP_URL` e redirect exato `APP_URL/api/auth/shopify/callback`, escopo `read_products,write_themes`.
 3. Preencher `.env.local` com `npm run secrets:generate`.
 4. `npm run dev`.
@@ -92,7 +92,7 @@ Esses passos estão no roteiro abaixo e precisam ser executados com as credencia
 
 1. Criar 2 produtos na A, com variantes diferentes, SKUs e preços.
 2. Criar a integração A+B no painel e conectar a A por OAuth com `read_products,write_themes`.
-3. Importar o catálogo da A; o painel deve instalar automaticamente `snippets/cross-store-bridge.liquid` e os assets no tema `MAIN`, inserindo `{% render 'cross-store-bridge' %}` no layout. Conferir o status em **Lojas e instalação**.
+3. Importar o catálogo da A; o painel deve instalar automaticamente `snippets/cross-store-bridge.liquid` e os assets no tema `MAIN`, inserindo `{% render 'cross-store-bridge' %}` no layout. Conferir o status no detalhe da loja Vitrine.
 4. Verificar que o layout antigo foi guardado como backup e que o botão de rollback aparece.
 
 ### Loja B Shopify

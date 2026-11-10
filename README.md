@@ -61,7 +61,7 @@ npm run build
 
 ### 2. Criar o banco
 
-No Supabase, crie um projeto e aplique as migrations [`0001_init.sql`](supabase/migrations/0001_init.sql), [`0002_theme_installations.sql`](supabase/migrations/0002_theme_installations.sql), [`0003_integrations.sql`](supabase/migrations/0003_integrations.sql), [`0004_store_oauth_credentials.sql`](supabase/migrations/0004_store_oauth_credentials.sql), [`0005_admin_settings.sql`](supabase/migrations/0005_admin_settings.sql), [`0006_store_admin_extras.sql`](supabase/migrations/0006_store_admin_extras.sql) e [`0007_store_pairs.sql`](supabase/migrations/0007_store_pairs.sql) e [`0008_store_pairs_repair.sql`](supabase/migrations/0008_store_pairs_repair.sql) pelo SQL Editor ou CLI. Não há Edge Functions. RLS fica habilitado e sem policies públicas; a `service_role` é usada apenas no servidor.
+No Supabase, crie um projeto e aplique as migrations [`0001_init.sql`](supabase/migrations/0001_init.sql), [`0002_theme_installations.sql`](supabase/migrations/0002_theme_installations.sql), [`0003_integrations.sql`](supabase/migrations/0003_integrations.sql), [`0004_store_oauth_credentials.sql`](supabase/migrations/0004_store_oauth_credentials.sql), [`0005_admin_settings.sql`](supabase/migrations/0005_admin_settings.sql), [`0006_store_admin_extras.sql`](supabase/migrations/0006_store_admin_extras.sql) e [`0007_store_pairs.sql`](supabase/migrations/0007_store_pairs.sql) e [`0008_store_pairs_repair.sql`](supabase/migrations/0008_store_pairs_repair.sql) e [`0009_activate_connected_stores.sql`](supabase/migrations/0009_activate_connected_stores.sql) pelo SQL Editor ou CLI. Não há Edge Functions. RLS fica habilitado e sem policies públicas; a `service_role` é usada apenas no servidor.
 
 ### 3. Configurar variáveis
 
@@ -79,7 +79,7 @@ O build lê o `.env` e gera `src/lib/env.generated.ts` (ignorado pelo Git), ent�
 npm run dev
 ```
 
-Abra `http://localhost:3000/admin`, entre com a senha gerada e siga o checklist. Em **Lojas e instalação**, cadastre cada loja como **Vitrine** ou **Checkout**, conecte os Shopify por OAuth e crie os pares Vitrine↔Checkout. Uma vitrine pode ter vários pares, mas só um ativo.
+Abra `http://localhost:3000/admin`, entre com a senha gerada e siga o checklist. Em **Lojas**, cadastre cada loja e abra o detalhe para editar, conectar e importar. Em **Pares**, monte as combinações Vitrine↔Checkout. Uma vitrine pode ter vários pares, mas só um ativo.
 
 ### 5. Instalação automática no tema
 

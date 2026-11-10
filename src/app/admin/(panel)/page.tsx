@@ -87,8 +87,8 @@ export default async function DashboardPage() {
             ))}
           </ul>
           <p className="footer-note">
-            A integração é feita por <strong>código no tema</strong> da Loja A. O painel
-            <strong> Lojas e instalação</strong> mostra os snippets e onde incluí-los.
+            A integração é feita por <strong>código no tema</strong> da Loja A. Abra a loja em
+            <strong> Lojas</strong> para instalar/restaurar o tema e ver o status.
           </p>
         </section>
 

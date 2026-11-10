@@ -20,6 +20,7 @@ import {
   createPair,
   createStore,
   deleteIntegration,
+  deleteStore,
   disconnectStore,
   getIntegrationById,
   getStoreById,
@@ -77,11 +78,11 @@ export async function renameIntegrationAction(formData: FormData): Promise<void>
   try {
     if (name.length < 2) throw new Error("Informe um nome para a integração.");
     await updateIntegrationName(id, name);
-    revalidatePath("/admin/stores");
-    redirectWithMessage("/admin/stores", "saved", "Integração renomeada.");
+    revalidatePath("/admin/pairs");
+    redirectWithMessage("/admin/pairs", "saved", "Par renomeado.");
   } catch (error) {
     if (isRedirectError(error)) throw error;
-    redirectWithMessage("/admin/stores", "error", error instanceof Error ? error.message : "Falha.");
+    redirectWithMessage("/admin/pairs", "error", error instanceof Error ? error.message : "Falha.");
   }
 }
 
@@ -92,11 +93,11 @@ export async function setIntegrationStatusAction(formData: FormData): Promise<vo
   try {
     if (!["draft", "active", "disabled"].includes(status)) throw new Error("Status inválido.");
     await setIntegrationStatus(id, status as "draft" | "active" | "disabled");
-    revalidatePath("/admin/stores");
-    redirectWithMessage("/admin/stores", "saved", "Status da integração atualizado.");
+    revalidatePath("/admin/pairs");
+    redirectWithMessage("/admin/pairs", "saved", "Status do par atualizado.");
   } catch (error) {
     if (isRedirectError(error)) throw error;
-    redirectWithMessage("/admin/stores", "error", error instanceof Error ? error.message : "Falha.");
+    redirectWithMessage("/admin/pairs", "error", error instanceof Error ? error.message : "Falha.");
   }
 }
 
@@ -110,11 +111,11 @@ export async function deleteIntegrationAction(formData: FormData): Promise<void>
     const cookieStore = await cookies();
     if (cookieStore.get(INTEGRATION_COOKIE)?.value === id) cookieStore.delete(INTEGRATION_COOKIE);
     revalidatePath("/admin");
-    revalidatePath("/admin/stores");
-    redirectWithMessage("/admin/stores", "saved", "Integração excluída.");
+    revalidatePath("/admin/pairs");
+    redirectWithMessage("/admin/pairs", "saved", "Par excluído.");
   } catch (error) {
     if (isRedirectError(error)) throw error;
-    redirectWithMessage("/admin/stores", "error", error instanceof Error ? error.message : "Falha.");
+    redirectWithMessage("/admin/pairs", "error", error instanceof Error ? error.message : "Falha.");
   }
 }
 
@@ -383,7 +384,7 @@ export async function createPairAction(formData: FormData): Promise<void> {
       } catch (activationError) {
         revalidatePath("/admin/stores");
         redirectWithMessage(
-          "/admin/stores",
+          "/admin/pairs",
           "error",
           `Par criado como rascunho, mas não foi ativado: ${
             activationError instanceof Error ? activationError.message : "verifique as lojas."
@@ -406,7 +407,8 @@ export async function selectIntegrationAction(formData: FormData): Promise<void>
     const integration = await getIntegrationById(id);
     if (!integration) throw new Error("Integração não encontrada.");
     await selectIntegrationCookie(integration.id);
-    const returnTo = stringField(formData, "return_to") === "/admin/mappings" ? "/admin/mappings" : "/admin/stores";
+    const requested = stringField(formData, "return_to");
+    const returnTo = requested === "/admin/mappings" || requested === "/admin/pairs" ? requested : "/admin/stores";
     redirectWithMessage(returnTo, "saved", `Par selecionado: ${integration.name}.`);
   } catch (error) {
     if (isRedirectError(error)) throw error;
@@ -487,40 +489,62 @@ export async function importCatalogAction(formData: FormData): Promise<void> {
   }
 }
 
-export async function installThemeAction(): Promise<void> {
+export async function installThemeAction(formData: FormData): Promise<void> {
   await requireAdmin();
-  const storeA = await getStoreByRole("a");
-  if (!storeA) {
-    redirectWithMessage("/admin/stores", "error", "Conecte a Loja A antes de instalar no tema.");
+  const storeId = stringField(formData, "store_id");
+  const store = await getStoreById(storeId);
+  if (!store || store.store_type !== "storefront") {
+    redirectWithMessage("/admin/stores", "error", "Selecione uma loja Vitrine antes de instalar no tema.");
   }
   try {
-    const result = await installThemeIntegration(storeA);
+    const result = await installThemeIntegration(store);
     revalidatePath("/admin/stores");
+    revalidatePath(`/admin/stores/${store.id}`);
     revalidatePath("/admin");
     if (result.installed) {
-      redirectWithMessage("/admin/stores", "saved", "Integração instalada/atualizada automaticamente no tema.");
+      redirectWithMessage(`/admin/stores/${store.id}`, "saved", "Integração instalada/atualizada automaticamente no tema.");
     }
     redirectWithMessage(
-      "/admin/stores",
+      `/admin/stores/${store.id}`,
       "error",
       result.error ?? "Não foi possível instalar no tema.",
     );
   } catch (error) {
     if (isRedirectError(error)) throw error;
-    redirectWithMessage("/admin/stores", "error", error instanceof Error ? error.message : "Falha.");
+    redirectWithMessage(`/admin/stores/${store.id}`, "error", error instanceof Error ? error.message : "Falha.");
   }
 }
 
-export async function rollbackThemeAction(): Promise<void> {
+export async function rollbackThemeAction(formData: FormData): Promise<void> {
   await requireAdmin();
-  const storeA = await getStoreByRole("a");
-  if (!storeA) {
-    redirectWithMessage("/admin/stores", "error", "Conecte a Loja A antes de restaurar o tema.");
+  const storeId = stringField(formData, "store_id");
+  const store = await getStoreById(storeId);
+  if (!store || store.store_type !== "storefront") {
+    redirectWithMessage("/admin/stores", "error", "Selecione uma loja Vitrine antes de restaurar o tema.");
   }
   try {
-    await rollbackThemeIntegration(storeA);
+    await rollbackThemeIntegration(store);
     revalidatePath("/admin/stores");
-    redirectWithMessage("/admin/stores", "saved", "Layout do tema restaurado a partir do backup.");
+    revalidatePath(`/admin/stores/${store.id}`);
+    redirectWithMessage(`/admin/stores/${store.id}`, "saved", "Layout do tema restaurado a partir do backup.");
+  } catch (error) {
+    if (isRedirectError(error)) throw error;
+    redirectWithMessage(`/admin/stores/${store.id}`, "error", error instanceof Error ? error.message : "Falha.");
+  }
+}
+
+
+export async function deleteStoreAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const storeId = stringField(formData, "store_id");
+  const confirm = stringField(formData, "confirm");
+  try {
+    if (confirm !== "EXCLUIR") throw new Error('Digite EXCLUIR para confirmar a exclusão da loja.');
+    await deleteStore(storeId);
+    revalidatePath("/admin");
+    revalidatePath("/admin/stores");
+    revalidatePath("/admin/pairs");
+    redirectWithMessage("/admin/stores", "saved", "Loja excluída.");
   } catch (error) {
     if (isRedirectError(error)) throw error;
     redirectWithMessage("/admin/stores", "error", error instanceof Error ? error.message : "Falha.");
