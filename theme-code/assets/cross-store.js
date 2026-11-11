@@ -316,20 +316,7 @@
 
   function buildUi(control, publicConfig, cfg) {
     var root = element("div", "csb-checkout-notice");
-    root.setAttribute("role", "note");
-
-    var title = element("strong", "csb-checkout-title", "Checkout em outra loja");
-    var text = element(
-      "p",
-      "csb-checkout-text",
-      "Ao continuar, o checkout será concluído na " +
-        publicConfig.destination.name +
-        " (" +
-        publicConfig.destination.domain +
-        "), responsável pela venda. Itens sem correspondência válida serão bloqueados.",
-    );
-    root.appendChild(title);
-    root.appendChild(text);
+    root.hidden = true;
 
     var issues = element("div", "csb-checkout-issues");
     issues.setAttribute("role", "alert");
@@ -346,6 +333,7 @@
   }
 
   function showIssues(ui, error) {
+    ui.root.hidden = false;
     clear(ui.issues);
     ui.issues.hidden = false;
     ui.issues.appendChild(
@@ -367,6 +355,7 @@
     if (ui.busy) return;
     ui.busy = true;
     ui.root.classList.add("csb-checkout-busy");
+    ui.root.hidden = true;
     clear(ui.issues);
     ui.issues.hidden = true;
 
