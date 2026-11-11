@@ -354,6 +354,10 @@
   async function runTransfer(ui) {
     if (ui.busy) return;
     ui.busy = true;
+    if (!document.body.contains(ui.root)) {
+      ui.root.classList.add("csb-checkout-notice--floating");
+      document.body.appendChild(ui.root);
+    }
     ui.root.classList.add("csb-checkout-busy");
     ui.root.hidden = true;
     clear(ui.issues);
@@ -552,19 +556,20 @@
 
     if (cfg.template === "product") {
       initExternalProduct(cfg);
-      return;
     }
 
-    if (cfg.template !== "cart") return;
+    // O tema pode usar cart drawer em qualquer página (produto, home etc.).
+    // Nesse caso o checkout não está no template "cart"; está no drawer.
+    var hasCartDrawer = Boolean(
+      document.querySelector("cart-drawer-component, #cart-drawer, .cart-drawer"),
+    );
+    if (cfg.template !== "cart" && !hasCartDrawer) return;
 
     var publicConfig = await fetchConfig(cfg);
     if (!publicConfig || !publicConfig.enabled || publicConfig.mode !== "transfer") {
       // Loja B externa ou indisponível: não intercepta o checkout normal da A.
       return;
     }
-
-    var items = await fetchCartItems();
-    if (items.length === 0) return;
 
     var controls = checkoutControls();
     var anchor = controls[0] || document.querySelector('form[action*="/cart"]') || document.body;

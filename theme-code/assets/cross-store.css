@@ -80,3 +80,15 @@
   font-size: 0.86rem;
   line-height: 1.4;
 }
+
+
+.csb-checkout-notice--floating {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2147483646;
+  max-width: 640px;
+  margin: 0 auto;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.24);
+}
