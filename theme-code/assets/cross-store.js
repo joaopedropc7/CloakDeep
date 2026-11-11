@@ -329,7 +329,47 @@
     } else {
       document.body.appendChild(root);
     }
-    return { root: root, issues: issues, busy: false, cfg: cfg };
+    return {
+      root: root,
+      issues: issues,
+      busy: false,
+      cfg: cfg,
+      destinationName: publicConfig.destination.name,
+      loading: null,
+    };
+  }
+
+
+  function showLoading(ui) {
+    if (ui.loading) return;
+    var overlay = element("div", "csb-checkout-loading");
+    overlay.setAttribute("role", "status");
+    overlay.setAttribute("aria-live", "assertive");
+    overlay.setAttribute("aria-busy", "true");
+
+    var card = element("div", "csb-checkout-loading__card");
+    var spinner = element("span", "csb-checkout-loading__spinner");
+    spinner.setAttribute("aria-hidden", "true");
+    var title = element("strong", "csb-checkout-loading__title", "Preparando seu checkout...");
+    var text = element(
+      "span",
+      "csb-checkout-loading__text",
+      "Aguarde enquanto validamos os itens e abrimos o checkout da " +
+        (ui.destinationName || "loja de destino") +
+        ".",
+    );
+    card.appendChild(spinner);
+    card.appendChild(title);
+    card.appendChild(text);
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+    ui.loading = overlay;
+  }
+
+  function hideLoading(ui) {
+    if (!ui.loading) return;
+    if (ui.loading.parentNode) ui.loading.parentNode.removeChild(ui.loading);
+    ui.loading = null;
   }
 
   function showIssues(ui, error) {
@@ -384,10 +424,12 @@
         showIssues(ui, checkout.error);
         return;
       }
+      keepLoading = true;
       window.location.assign(checkout.checkoutUrl);
     } catch (error) {
       showIssues(ui, { message: "Não foi possível preparar a transferência." });
     } finally {
+      if (!keepLoading) hideLoading(ui);
       ui.busy = false;
       ui.root.classList.remove("csb-checkout-busy");
     }
