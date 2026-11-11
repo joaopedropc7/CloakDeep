@@ -15,7 +15,7 @@ import type { StoreRow } from "@/lib/db/types";
 import { adminGraphql, ShopifyApiError } from "@/lib/shopify/admin";
 import { THEME_CSS, THEME_JS, THEME_SNIPPET } from "@/lib/theme/theme-assets.generated";
 
-export const THEME_INSTALL_VERSION = "7";
+export const THEME_INSTALL_VERSION = "6";
 const MARKER = "CSB_THEME_INSTALL_V1";
 const LAYOUT_FILE = "layout/theme.liquid";
 const SNIPPET_FILE = "snippets/cross-store-bridge.liquid";
